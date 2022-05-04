@@ -4,7 +4,7 @@
   "description": "A custom Annotorious editor/view plugin ",
   "main": "./dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+      "build": "webpack --mode production"
   },
   "repository": {
     "type": "git",
