@@ -5,6 +5,8 @@ import { Annotation } from "./types/Annotation";
 class TranscriptionEditor {
     anno;
 
+    annotationContainer;
+
     storage;
 
     // TODO: Add typedefs for the Annotorious client (anno) and storage plugin
@@ -14,42 +16,49 @@ class TranscriptionEditor {
         this.storage = storage;
         // disable the default annotorious editor (headless mode)
         this.anno.disableEditor = true;
-        this.injectIntoElement(annotationContainer);
+        this.annotationContainer = annotationContainer;
+
+        // attache event listeners
+        document.addEventListener(
+            "annotations-loaded",
+            this.handleAnnotationsLoaded,
+        );
+        this.anno.on("createSelection", this.handleCreateSelection);
+        this.anno.on("selectAnnotation", this.handleSelectAnnotation);
     }
 
-    injectIntoElement(annotationContainer: HTMLElement) {
-        document.addEventListener("annotations-loaded", () => {
-            // custom event triggered by storage plugin
+    handleAnnotationsLoaded() {
+        // custom event triggered by storage plugin
 
-            // remove any existing annotation displays, in case of update
-            annotationContainer
-                .querySelectorAll(".annotation-display-container")
-                .forEach((el) => el.remove());
-            // display all current annotations
-            this.anno.getAnnotations().forEach((annotation: Annotation) => {
-                annotationContainer.append(this.createDisplayBlock(annotation));
-            });
-        });
-
-        // when a new selection is made, instantiate an editor
-        this.anno.on("createSelection", async (selection: Annotation) => {
-            const editorBlock = this.createEditorBlock(selection);
-            if (editorBlock) annotationContainer.append(editorBlock);
-        });
-
-        this.anno.on("selectAnnotation", (annotation: Annotation) => {
-            // The users has selected an existing annotation
-
-            // make sure no other editor is active
-            this.makeAllReadOnly();
-            // find the display element by annotation id and swith to edit mode
-            const displayContainer = document.querySelector(
-                '[data-annotation-id="' + annotation.id + '"]',
+        // remove any existing annotation displays, in case of update
+        this.annotationContainer
+            .querySelectorAll(".annotation-display-container")
+            .forEach((el) => el.remove());
+        // display all current annotations
+        this.anno.getAnnotations().forEach((annotation: Annotation) => {
+            this.annotationContainer.append(
+                this.createDisplayBlock(annotation),
             );
-            if (displayContainer && displayContainer instanceof HTMLElement) {
-                this.makeEditable(displayContainer, annotation);
-            }
         });
+    }
+
+    async handleCreateSelection(selection: Annotation) {
+        // when a new selection is made, instantiate an editor
+        const editorBlock = this.createEditorBlock(selection);
+        if (editorBlock) this.annotationContainer.append(editorBlock);
+    }
+
+    handleSelectAnnotation(annotation: Annotation) {
+        // The user has selected an existing annotation
+        // make sure no other editor is active
+        this.makeAllReadOnly();
+        // find the display element by annotation id and swith to edit mode
+        const displayContainer = document.querySelector(
+            '[data-annotation-id="' + annotation.id + '"]',
+        );
+        if (displayContainer && displayContainer instanceof HTMLElement) {
+            this.makeEditable(displayContainer, annotation);
+        }
     }
 
     createDisplayBlock(annotation: Annotation): HTMLElement {
