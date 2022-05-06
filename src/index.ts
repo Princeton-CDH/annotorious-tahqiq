@@ -75,7 +75,7 @@ class TranscriptionEditor {
         container.append(textInput);
 
         // existing annotation
-        if (typeof annotation.id !== undefined) {
+        if (annotation.id !== undefined) {
             container.dataset.annotationId = annotation.id;
 
             // when this display is clicked, highlight the zone and make editable
@@ -104,6 +104,7 @@ class TranscriptionEditor {
             textInput.setAttribute("class", "annotation-editor");
             textInput.setAttribute("contenteditable", "true");
             textInput.focus();
+            console.log("textinput focus");
         }
         // add save and cancel buttons
         const saveButton = document.createElement("button");
@@ -152,6 +153,7 @@ class TranscriptionEditor {
 
         // if this is a saved annotation, add delete button
         if (container.dataset.annotationId) {
+            console.log("makeEditable existing anno" + container.dataset.annotationId);
             const deleteButton = document.createElement("button");
             deleteButton.setAttribute("class", "delete");
             deleteButton.textContent = "Delete";
@@ -182,7 +184,7 @@ class TranscriptionEditor {
             // restore the original content
             if (
                 annotation &&
-                typeof annotation.body !== undefined &&
+                annotation.body !== undefined &&
                 Array.isArray(annotation.body)
             ) {
                 textInput.innerHTML = annotation.body[0].value;
