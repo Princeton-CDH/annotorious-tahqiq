@@ -5,7 +5,7 @@ import { Annotation } from "./types/Annotation";
 class TranscriptionEditor {
     anno;
 
-    annotationContainer;
+    annotationContainer: HTMLElement;
 
     storage;
 
@@ -18,13 +18,16 @@ class TranscriptionEditor {
         this.anno.disableEditor = true;
         this.annotationContainer = annotationContainer;
 
-        // attache event listeners
+        // attach event listeners
         document.addEventListener(
             "annotations-loaded",
-            this.handleAnnotationsLoaded,
+            this.handleAnnotationsLoaded.bind(this),
         );
-        this.anno.on("createSelection", this.handleCreateSelection);
-        this.anno.on("selectAnnotation", this.handleSelectAnnotation);
+        this.anno.on("createSelection", this.handleCreateSelection.bind(this));
+        this.anno.on(
+            "selectAnnotation",
+            this.handleSelectAnnotation.bind(this),
+        );
     }
 
     handleAnnotationsLoaded() {
