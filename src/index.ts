@@ -1,5 +1,8 @@
 // custom annotation editor for geniza project
 
+import { CancelButton } from "./elements/CancelButton";
+import { DeleteButton } from "./elements/DeleteButton";
+import { SaveButton } from "./elements/SaveButton";
 import { Annotation } from "./types/Annotation";
 
 class TranscriptionEditor {
@@ -17,6 +20,11 @@ class TranscriptionEditor {
         // disable the default annotorious editor (headless mode)
         this.anno.disableEditor = true;
         this.annotationContainer = annotationContainer;
+
+        // define custom elements
+        customElements.define("save-button", SaveButton, { extends: "button" });
+        customElements.define("cancel-button", CancelButton, { extends: "button" });
+        customElements.define("delete-button", DeleteButton, { extends: "button" });
 
         // attach event listeners
         document.addEventListener(
@@ -104,69 +112,16 @@ class TranscriptionEditor {
             textInput.setAttribute("class", "annotation-editor");
             textInput.setAttribute("contenteditable", "true");
             textInput.focus();
-            console.log("textinput focus");
+            // add save and cancel buttons
+            container.append(
+                new SaveButton(container, this, selection, textInput),
+            );
+            container.append(new CancelButton(container, this, selection));
         }
-        // add save and cancel buttons
-        const saveButton = document.createElement("button");
-        saveButton.setAttribute("class", "save");
-        saveButton.textContent = "Save";
-        const cancelButton = document.createElement("button");
-        cancelButton.setAttribute("class", "cancel");
-        cancelButton.textContent = "Cancel";
-        container.append(saveButton);
-        container.append(cancelButton);
-
-        saveButton.onclick = async () => {
-            // add the content to the annotation
-            selection.motivation = "supplementing";
-            if (Array.isArray(selection.body) && selection.body.length == 0) {
-                selection.body.push({
-                    type: "TextualBody",
-                    purpose: "transcribing",
-                    value: textInput?.textContent || "",
-                    format: "text/html",
-                    // TODO: transcription motivation, language, etc.
-                });
-            } else if (Array.isArray(selection.body)) {
-                // assume text content is first body element
-                selection.body[0].value = textInput?.textContent || "";
-            }
-            // update with annotorious, then save to storage backend
-            await this.anno.updateSelected(selection);
-            this.anno.saveSelected();
-            // make the editor inactive
-            this.makeReadOnly(container);
-        };
-        cancelButton.addEventListener("click", () => {
-            // cancel the edit
-
-            // clear the selection from the image
-            this.anno.cancelSelected();
-            // if annotation is unsaved, restore and make read only
-            if (container.dataset.annotationId) {
-                this.makeReadOnly(container, selection);
-                // if this was a new annotation, remove the container
-            } else {
-                container.remove();
-            }
-        });
 
         // if this is a saved annotation, add delete button
         if (container.dataset.annotationId) {
-            const deleteButton = document.createElement("button");
-            deleteButton.setAttribute("class", "delete");
-            deleteButton.textContent = "Delete";
-            container.append(deleteButton);
-
-            deleteButton.addEventListener("click", () => {
-                // remove the highlight zone from the image
-                this.anno.removeAnnotation(container.dataset.annotationId);
-                // remove the edit/display container
-                container.remove();
-                // calling removeAnnotation doesn't fire the deleteAnnotation,
-                // so we have to trigger the deletion explicitly
-                this.storage.adapter.delete(container.dataset.annotationId);
-            });
+            container.append(new DeleteButton(container, this));
         }
 
         return container;
