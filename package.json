@@ -5,6 +5,7 @@
     "main": "./dist/index.js",
     "scripts": {
         "build": "webpack --mode production",
+        "prepare": "npm run build",
         "lint": "eslint 'src/**/*.ts'",
         "lint:fix": "eslint --fix 'src/**/*.ts'",
         "test": "jest"

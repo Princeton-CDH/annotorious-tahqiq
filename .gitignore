@@ -53,3 +53,6 @@ typings/
 # dotenv environment variables file
 .env
 .env.test
+
+# built code
+dist/
