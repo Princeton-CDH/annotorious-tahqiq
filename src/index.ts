@@ -153,7 +153,6 @@ class TranscriptionEditor {
 
         // if this is a saved annotation, add delete button
         if (container.dataset.annotationId) {
-            console.log("makeEditable existing anno" + container.dataset.annotationId);
             const deleteButton = document.createElement("button");
             deleteButton.setAttribute("class", "delete");
             deleteButton.textContent = "Delete";
