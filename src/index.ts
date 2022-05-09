@@ -1,10 +1,11 @@
-// custom annotation editor for geniza project
-
 import { CancelButton } from "./elements/CancelButton";
 import { DeleteButton } from "./elements/DeleteButton";
 import { SaveButton } from "./elements/SaveButton";
 import { Annotation } from "./types/Annotation";
 
+/**
+ * Custom annotation editor for Geniza project
+ */
 class TranscriptionEditor {
     anno;
 
@@ -13,6 +14,15 @@ class TranscriptionEditor {
     storage;
 
     // TODO: Add typedefs for the Annotorious client (anno) and storage plugin
+
+    /**
+     * Initialize an instance of the TranscriptionEditor.
+     *
+     * @param {any} anno Instance of Annotorious.
+     * @param {any} storage Storage plugin to save Annotorious annotations.
+     * @param {HTMLElement} annotationContainer Existing HTML element that the editor will be
+     * placed into.
+     */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(anno: any, storage: any, annotationContainer: HTMLElement) {
         this.anno = anno;
@@ -23,8 +33,12 @@ class TranscriptionEditor {
 
         // define custom elements
         customElements.define("save-button", SaveButton, { extends: "button" });
-        customElements.define("cancel-button", CancelButton, { extends: "button" });
-        customElements.define("delete-button", DeleteButton, { extends: "button" });
+        customElements.define("cancel-button", CancelButton, {
+            extends: "button",
+        });
+        customElements.define("delete-button", DeleteButton, {
+            extends: "button",
+        });
 
         // attach event listeners
         document.addEventListener(
@@ -38,9 +52,10 @@ class TranscriptionEditor {
         );
     }
 
+    /**
+     * Handler for custom annotations loaded event triggered by storage plugin.
+     */
     handleAnnotationsLoaded() {
-        // custom event triggered by storage plugin
-
         // remove any existing annotation displays, in case of update
         this.annotationContainer
             .querySelectorAll(".annotation-display-container")
@@ -53,12 +68,25 @@ class TranscriptionEditor {
         });
     }
 
+    /**
+     * Instantiates an editable display block when a new selection is made.
+     *
+     * @param {Annotation} selection Selected Annotorious annotation.
+     */
     async handleCreateSelection(selection: Annotation) {
-        // when a new selection is made, instantiate an editor
-        const editorBlock = this.createEditorBlock(selection);
-        if (editorBlock) this.annotationContainer.append(editorBlock);
+        const displayBlock = this.makeEditable(
+            this.createDisplayBlock(selection),
+            selection,
+        );
+        if (displayBlock) this.annotationContainer.append(displayBlock);
     }
 
+    /**
+     * Sets all display blocks to read-only when an existing annotation is selected,
+     * and sets one display block to editable corresponding to the selected annotation.
+     *
+     * @param {Annotation} annotation Annotorious annotation.
+     */
     handleSelectAnnotation(annotation: Annotation) {
         // The user has selected an existing annotation
         // make sure no other editor is active
@@ -72,6 +100,61 @@ class TranscriptionEditor {
         }
     }
 
+    /**
+     * Deletes an annotation from both Annotorious display and the annotation store.
+     *
+     * @param {string} annotationId The ID of the annotation to delete.
+     */
+    handleDeleteAnnotation(annotationId: string) {
+        // remove the highlight zone from the image
+        this.anno.removeAnnotation(annotationId);
+        // calling removeAnnotation doesn't fire the deleteAnnotation,
+        // so we have to trigger the deletion explicitly
+        this.storage.adapter.delete(annotationId);
+    }
+
+    /**
+     * Saves the passed annotation using the passed text input's value, and makes the associated
+     * display block read only.
+     *
+     * @param {Annotation} selection Selected Annotorious annotation to save.
+     * @param {HTMLDivElement} textInput Text input containing the text content of the annotation.
+     * @param {HTMLElement} displayBlock Display block associated with this annotation.
+     */
+    async handleSaveAnnotation(
+        selection: Annotation,
+        textInput: HTMLDivElement,
+        displayBlock: HTMLElement,
+    ) {
+        // add the content to the annotation
+        selection.motivation = "supplementing";
+        if (Array.isArray(selection.body) && selection.body.length == 0) {
+            selection.body.push({
+                type: "TextualBody",
+                purpose: "transcribing",
+                value: textInput.textContent || "",
+                format: "text/html",
+                // TODO: transcription motivation, language, etc.
+            });
+        } else if (Array.isArray(selection.body)) {
+            // assume text content is first body element
+            selection.body[0].value = textInput.textContent || "";
+        }
+        // update with annotorious, then save to storage backend
+        console.log(selection);
+        await this.anno.updateSelected(selection);
+        this.anno.saveSelected();
+        // make the editor inactive
+        this.makeReadOnly(displayBlock);
+    }
+
+    /**
+     * Creates a new display block with a text input, and if passed an existing annotation,
+     * links the display block with that annotation.
+     *
+     * @param {Annotation} annotation Annotorious annotation.
+     * @returns {HTMLElement} Display block div element.
+     */
     createDisplayBlock(annotation: Annotation): HTMLElement {
         const container = document.createElement("div");
         container.setAttribute("class", "annotation-display-container");
@@ -98,40 +181,78 @@ class TranscriptionEditor {
         return container;
     }
 
-    makeEditable(container: HTMLElement, selection: Annotation) {
-        // make an existing display container editable
+    /**
+     * Makes an existing display block editable by setting its contenteditable
+     * property and adding Save, Cancel, and Delete buttons.
+     *
+     * @param {HTMLElement} displayBlock Existing display block.
+     * @param {Annotation} selection Selected Annotorious annotation.
+     * @returns {HTMLElement} The passed display block, but editable.
+     */
+    makeEditable(
+        displayBlock: HTMLElement,
+        selection: Annotation,
+    ): HTMLElement {
+        //
 
         // if it's already editable, don't do anything
-        if (container.getAttribute("class") == "annotation-edit-container") {
-            return;
+        if (displayBlock.getAttribute("class") == "annotation-edit-container") {
+            return displayBlock;
         }
 
-        container.setAttribute("class", "annotation-edit-container");
-        const textInput = container.querySelector("div");
+        displayBlock.setAttribute("class", "annotation-edit-container");
+        const textInput = displayBlock.querySelector("div");
         if (textInput) {
             textInput.setAttribute("class", "annotation-editor");
             textInput.setAttribute("contenteditable", "true");
             textInput.focus();
             // add save and cancel buttons
-            container.append(
-                new SaveButton(container, this, selection, textInput),
+            displayBlock.append(
+                new SaveButton(
+                    selection,
+                    textInput,
+                    displayBlock,
+                    this.handleSaveAnnotation.bind(this),
+                ),
             );
-            container.append(new CancelButton(container, this, selection));
+            displayBlock.append(
+                new CancelButton(
+                    selection,
+                    displayBlock,
+                    this.makeReadOnly.bind(this),
+                    this.anno.cancelSelected,
+                ),
+            );
         }
 
         // if this is a saved annotation, add delete button
-        if (container.dataset.annotationId) {
-            container.append(new DeleteButton(container, this));
+        if (displayBlock.dataset.annotationId) {
+            displayBlock.append(
+                new DeleteButton(
+                    displayBlock,
+                    this.handleDeleteAnnotation.bind(this),
+                ),
+            );
         }
 
-        return container;
+        return displayBlock;
     }
 
-    makeReadOnly(container: HTMLElement, annotation?: Annotation) {
+    /**
+     * Makes an existing display block read-only.
+     *
+     * @param {HTMLElement} displayBlock Existing display block.
+     * @param {Annotation} [annotation] Annotorious annotation (optional).
+     * @returns {HTMLElement} The passed display block, but read-only.
+     */
+    makeReadOnly(
+        displayBlock: HTMLElement,
+        annotation?: Annotation,
+    ): HTMLElement {
         // convert a container that has been made editable back to display format
         // annotation is optional; used to reset content if necessary
-        container.setAttribute("class", "annotation-display-container");
-        const textInput = container.querySelector("div");
+        displayBlock.setAttribute("class", "annotation-display-container");
+        const textInput = displayBlock.querySelector("div");
         if (textInput) {
             textInput.setAttribute("class", "");
             textInput.setAttribute("contenteditable", "false");
@@ -148,26 +269,22 @@ class TranscriptionEditor {
             }
         }
         // remove buttons (or should we just hide them?)
-        container.querySelectorAll("button").forEach((el) => el.remove());
+        displayBlock.querySelectorAll("button").forEach((el) => el.remove());
 
-        return container;
+        return displayBlock;
     }
 
+    /**
+     * Sets all display blocks to read-only.
+     */
     makeAllReadOnly() {
-        // make sure no editor is active
+        // make sure no display block is editable
         document
             .querySelectorAll(".annotation-edit-container")
             .forEach((container) => {
                 if (container instanceof HTMLElement)
                     this.makeReadOnly(container);
             });
-    }
-
-    // method to create an editor block
-    // container, editable div, buttons to save/cancel/delete
-    createEditorBlock(selection: Annotation) {
-        // create a new annotation editor block and return
-        return this.makeEditable(this.createDisplayBlock(selection), selection);
     }
 }
 

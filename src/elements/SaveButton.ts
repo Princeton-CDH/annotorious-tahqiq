@@ -1,26 +1,46 @@
 import { Annotation } from "../types/Annotation";
 
+/**
+ * A button to save a selected annotation to the store.
+ */
 class SaveButton extends HTMLButtonElement {
-    container: HTMLElement;
-
-    editor;
+    displayBlock: HTMLElement;
 
     selection: Annotation;
 
     textInput: HTMLDivElement;
 
-    constructor(
-        container: HTMLElement,
-        editor: any,
+    handleSaveAnnotation: (
         selection: Annotation,
         textInput: HTMLDivElement,
+        displayBlock: HTMLElement
+    ) => Promise<void>;
+
+    /**
+     * Creates a new save button.
+     *
+     * @param {Annotation} selection Selected Annotorious annotation.
+     * @param {HTMLDivElement} textInput Text input associated with this save button.
+     * @param {HTMLElement} displayBlock Display block associated with this save button.
+     * @param {Function} handleSaveAnnotation Function from the editor instance to save
+     * the annotation.
+     */
+    constructor(
+        selection: Annotation,
+        textInput: HTMLDivElement,
+        displayBlock: HTMLElement,
+        handleSaveAnnotation: (
+            selection: Annotation,
+            textInput: HTMLDivElement,
+            displayBlock: HTMLElement
+        ) => Promise<void>,
     ) {
         super();
 
-        this.container = container;
-        this.editor = editor;
         this.selection = selection;
         this.textInput = textInput;
+        this.displayBlock = displayBlock;
+        this.handleSaveAnnotation = handleSaveAnnotation;
 
         // Set class and content
         this.setAttribute("class", "save");
@@ -30,30 +50,15 @@ class SaveButton extends HTMLButtonElement {
         this.addEventListener("click", this.handleClick.bind(this));
     }
 
+    /**
+     * Calls the save function from the editor instance.
+     */
     async handleClick(): Promise<void> {
-        // add the content to the annotation
-        this.selection.motivation = "supplementing";
-        if (
-            Array.isArray(this.selection.body) &&
-            this.selection.body.length == 0
-        ) {
-            this.selection.body.push({
-                type: "TextualBody",
-                purpose: "transcribing",
-                value: this.textInput.textContent || "",
-                format: "text/html",
-                // TODO: transcription motivation, language, etc.
-            });
-        } else if (Array.isArray(this.selection.body)) {
-            // assume text content is first body element
-            this.selection.body[0].value = this.textInput.textContent || "";
-        }
-        // update with annotorious, then save to storage backend
-        console.log(this.selection);
-        await this.editor.anno.updateSelected(this.selection);
-        this.editor.anno.saveSelected();
-        // make the editor inactive
-        this.editor.makeReadOnly(this.container);
+        await this.handleSaveAnnotation(
+            this.selection,
+            this.textInput,
+            this.displayBlock,
+        );
     }
 }
 

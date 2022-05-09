@@ -1,13 +1,23 @@
+/**
+ * A button that deletes an annotation from both Annotorious display and the annotation store.
+ */
 class DeleteButton extends HTMLButtonElement {
-    container: HTMLElement;
+    displayBlock: HTMLElement;
 
-    editor: any;
+    handleDeleteAnnotation: (annotationId: string) => void;
     
-    constructor(container: HTMLElement, editor: any) {
+    /**
+     * Instantiate a delete button.
+     *
+     * @param {HTMLElement} displayBlock The display block element containing this button.
+     * @param {Function} handleDeleteAnnotation The editor function to delete an annotation given
+     * its ID.
+     */
+    constructor(displayBlock: HTMLElement, handleDeleteAnnotation: (annotationId: string) => void) {
         super();
 
-        this.container = container;
-        this.editor = editor;
+        this.displayBlock = displayBlock;
+        this.handleDeleteAnnotation = handleDeleteAnnotation;
 
         // Class and content
         this.setAttribute("class", "delete");
@@ -16,14 +26,22 @@ class DeleteButton extends HTMLButtonElement {
         this.addEventListener("click", this.handleClick.bind(this));
     }
 
+    /**
+     * Delete the annotation on click.
+     */
     handleClick() {
-        // remove the highlight zone from the image
-        this.editor.anno.removeAnnotation(this.container.dataset.annotationId);
-        // remove the edit/display container
-        this.container.remove();
-        // calling removeAnnotation doesn't fire the deleteAnnotation,
-        // so we have to trigger the deletion explicitly
-        this.editor.storage.adapter.delete(this.container.dataset.annotationId);
+        try {
+            if (!this.displayBlock.dataset.annotationId) {
+                throw new Error("No annotation ID associated with this display block.");
+            } else {
+                this.handleDeleteAnnotation(this.displayBlock.dataset.annotationId);
+                // remove the edit/display displayBlock
+                this.displayBlock.remove();
+            }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+            console.error(err.message);
+        }
     }
 }
 
