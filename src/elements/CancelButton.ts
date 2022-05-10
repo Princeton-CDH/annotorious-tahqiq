@@ -1,37 +1,20 @@
-import { Annotation } from "../types/Annotation";
+import { AnnotationBlock } from "./AnnotationBlock";
 
 /**
  * A button that cancels editing or creating an annotation on click.
  */
 class CancelButton extends HTMLButtonElement {
-    selection: Annotation;
-
-    displayBlock: HTMLElement;
-
-    makeReadOnly;
-
-    cancelSelected;
+    annotationBlock: AnnotationBlock;
 
     /**
      * Creates a cancel button.
      *
-     * @param {Annotation} selection Selected Annotorious annotation.
-     * @param {HTMLElement} displayBlock Display block associated with this cancel button.
-     * @param {Function} makeReadOnly Function to make the display block read-only.
-     * @param {Function} cancelSelected Function to clear the Annotorious selection.
+     * @param {AnnotationBlock} annotationBlock Annotation block associated with this cancel button.
      */
-    constructor(
-        selection: Annotation,
-        displayBlock: HTMLElement,
-        makeReadOnly: (displayBlock: HTMLElement, selection: Annotation) => void,
-        cancelSelected: () => void,
-    ) {
+    constructor(annotationBlock: AnnotationBlock) {
         super();
 
-        this.selection = selection;
-        this.displayBlock = displayBlock;
-        this.makeReadOnly = makeReadOnly;
-        this.cancelSelected = cancelSelected;
+        this.annotationBlock = annotationBlock;
 
         // Set class and content
         this.setAttribute("class", "cancel");
@@ -47,13 +30,13 @@ class CancelButton extends HTMLButtonElement {
     handleClick() {
         // cancel the edit
         // clear the selection from the image
-        this.cancelSelected();
-        if (this.displayBlock.dataset.annotationId) {
+        this.annotationBlock.onCancel();
+        if (this.annotationBlock.annotation.id) {
             // if annotation was saved previously, restore and make read only
-            this.makeReadOnly(this.displayBlock, this.selection);
+            this.annotationBlock.makeReadOnly(true);
         } else {
             // if this was a new annotation, remove the displayBlock
-            this.displayBlock.remove();
+            this.annotationBlock.remove();
         }
     }
 }

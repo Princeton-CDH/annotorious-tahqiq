@@ -1,3 +1,4 @@
+import { AnnotationBlock } from "./elements/AnnotationBlock";
 import { CancelButton } from "./elements/CancelButton";
 import { DeleteButton } from "./elements/DeleteButton";
 import { SaveButton } from "./elements/SaveButton";
@@ -39,6 +40,9 @@ class TranscriptionEditor {
         customElements.define("delete-button", DeleteButton, {
             extends: "button",
         });
+        customElements.define("annotation-block", AnnotationBlock, {
+            extends: "div",
+        });
 
         // attach event listeners
         document.addEventListener(
@@ -63,227 +67,145 @@ class TranscriptionEditor {
         // display all current annotations
         this.anno.getAnnotations().forEach((annotation: Annotation) => {
             this.annotationContainer.append(
-                this.createDisplayBlock(annotation),
+                new AnnotationBlock({
+                    annotation,
+                    editable: false,
+                    onCancel: this.anno.cancelSelected,
+                    onClick: this.handleClickAnnotationBlock.bind(this),
+                    onDelete: this.handleDeleteAnnotation.bind(this),
+                    onSave: this.handleSaveAnnotation.bind(this),
+                    updateAnnotorious: this.anno.addAnnotation,
+                }),
             );
         });
     }
 
     /**
-     * Instantiates an editable display block when a new selection is made.
+     * Instantiates an editable annotation block when a new selection is made.
      *
      * @param {Annotation} selection Selected Annotorious annotation.
      */
     async handleCreateSelection(selection: Annotation) {
-        const displayBlock = this.makeEditable(
-            this.createDisplayBlock(selection),
-            selection,
+        this.annotationContainer.append(
+            new AnnotationBlock({
+                annotation: selection,
+                editable: true,
+                onCancel: this.anno.cancelSelected,
+                onClick: this.handleClickAnnotationBlock.bind(this),
+                onDelete: this.handleDeleteAnnotation.bind(this),
+                onSave: this.handleSaveAnnotation.bind(this),
+                updateAnnotorious: this.anno.addAnnotation,
+            }),
         );
-        if (displayBlock) this.annotationContainer.append(displayBlock);
     }
 
     /**
-     * Sets all display blocks to read-only when an existing annotation is selected,
-     * and sets one display block to editable corresponding to the selected annotation.
+     * Sets all annotation blocks to read-only when an existing annotation is selected,
+     * and sets one annotation block to editable corresponding to the selected annotation.
      *
      * @param {Annotation} annotation Annotorious annotation.
      */
     handleSelectAnnotation(annotation: Annotation) {
         // The user has selected an existing annotation
-        // make sure no other editor is active
-        this.makeAllReadOnly();
         // find the display element by annotation id and swith to edit mode
-        const displayContainer = document.querySelector(
+        const annotationBlock = document.querySelector(
             '[data-annotation-id="' + annotation.id + '"]',
         );
-        if (displayContainer && displayContainer instanceof HTMLElement) {
-            this.makeEditable(displayContainer, annotation);
+        if (annotationBlock && annotationBlock instanceof AnnotationBlock) {
+            // make sure no other editor is active
+            this.makeAllReadOnlyExcept(annotationBlock);
+            annotationBlock.makeEditable();
         }
     }
 
     /**
      * Deletes an annotation from both Annotorious display and the annotation store.
      *
-     * @param {string} annotationId The ID of the annotation to delete.
+     * @param {string} annotationBlock Annotation block associated with the annotation to delete.
      */
-    handleDeleteAnnotation(annotationId: string) {
-        // remove the highlight zone from the image
-        this.anno.removeAnnotation(annotationId);
-        // calling removeAnnotation doesn't fire the deleteAnnotation,
-        // so we have to trigger the deletion explicitly
-        this.storage.adapter.delete(annotationId);
+    handleDeleteAnnotation(annotationBlock: AnnotationBlock) {
+        try {
+            if (!annotationBlock.annotation.id) {
+                // TODO: Better error handling
+                throw new Error(
+                    "No annotation ID associated with this display block.",
+                );
+            } else {
+                // remove the highlight zone from the image
+                this.anno.removeAnnotation(annotationBlock.annotation.id);
+                // calling removeAnnotation doesn't fire the deleteAnnotation,
+                // so we have to trigger the deletion explicitly
+                this.storage.adapter.delete(annotationBlock.annotation.id);
+                // remove the edit/display displayBlock
+                annotationBlock.remove();
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+            console.error(err.message);
+        }
     }
 
     /**
-     * Saves the passed annotation using the passed text input's value, and makes the associated
-     * display block read only.
+     * Saves the passed annotation block's associated annotation using its
+     * text input value, and makes the annotation block read only.
      *
-     * @param {Annotation} selection Selected Annotorious annotation to save.
-     * @param {HTMLDivElement} textInput Text input containing the text content of the annotation.
-     * @param {HTMLElement} displayBlock Display block associated with this annotation.
+     * @param {HTMLElement} annotationBlock Annotation block associated with the annotation to save.
      */
-    async handleSaveAnnotation(
-        selection: Annotation,
-        textInput: HTMLDivElement,
-        displayBlock: HTMLElement,
-    ) {
+    async handleSaveAnnotation(annotationBlock: AnnotationBlock) {
+        const annotation = annotationBlock.annotation;
         // add the content to the annotation
-        selection.motivation = "supplementing";
-        if (Array.isArray(selection.body) && selection.body.length == 0) {
-            selection.body.push({
+        annotation.motivation = "supplementing";
+        if (Array.isArray(annotation.body) && annotation.body.length == 0) {
+            annotation.body.push({
                 type: "TextualBody",
                 purpose: "transcribing",
-                value: textInput.textContent || "",
+                value: annotationBlock.textInput.textContent || "",
                 format: "text/html",
                 // TODO: transcription motivation, language, etc.
             });
-        } else if (Array.isArray(selection.body)) {
+        } else if (Array.isArray(annotation.body)) {
             // assume text content is first body element
-            selection.body[0].value = textInput.textContent || "";
+            annotation.body[0].value =
+                annotationBlock.textInput.textContent || "";
         }
         // update with annotorious, then save to storage backend
-        console.log(selection);
-        await this.anno.updateSelected(selection);
+        await this.anno.updateSelected(annotation);
         this.anno.saveSelected();
-        // make the editor inactive
-        this.makeReadOnly(displayBlock);
+        // update annotation block with new annotation and set inactive
+        annotationBlock.setAnnotation(annotation);
+        annotationBlock.makeReadOnly();
     }
 
     /**
-     * Creates a new display block with a text input, and if passed an existing annotation,
-     * links the display block with that annotation.
+     * On clicking an AnnotationBlock, selects the associated annotation in Annotorious
+     * and makes all other AnnotationBlocks read-only.
      *
-     * @param {Annotation} annotation Annotorious annotation.
-     * @returns {HTMLElement} Display block div element.
+     * @param {Annotation} annotationBlock The AnnotationBlock that was clicked.
      */
-    createDisplayBlock(annotation: Annotation): HTMLElement {
-        const container = document.createElement("div");
-        container.setAttribute("class", "annotation-display-container");
-        const textInput = document.createElement("div");
-
-        if (Array.isArray(annotation.body) && annotation.body.length > 0) {
-            textInput.innerHTML = annotation.body[0].value;
+    handleClickAnnotationBlock(annotationBlock: AnnotationBlock) {
+        if (annotationBlock.annotation.id) {
+            // highlight the zone
+            this.anno.selectAnnotation(annotationBlock.annotation.id);
+            // make sure no other annotation blocks are editable
+            this.makeAllReadOnlyExcept(annotationBlock);
         }
-        container.append(textInput);
-
-        // existing annotation
-        if (annotation.id !== undefined) {
-            container.dataset.annotationId = annotation.id;
-
-            // when this display is clicked, highlight the zone and make editable
-            textInput.addEventListener("click", () => {
-                this.anno.selectAnnotation(annotation.id);
-                // make sure no other editors are active
-                this.makeAllReadOnly();
-                // selection event not fired in this case, so make editable
-                this.makeEditable(container, annotation);
-            });
-        }
-        return container;
     }
 
     /**
-     * Makes an existing display block editable by setting its contenteditable
-     * property and adding Save, Cancel, and Delete buttons.
+     * Sets all annotation blocks to read-only, except the passed one.
      *
-     * @param {HTMLElement} displayBlock Existing display block.
-     * @param {Annotation} selection Selected Annotorious annotation.
-     * @returns {HTMLElement} The passed display block, but editable.
+     * @param {AnnotationBlock} annotationBlock The annotation block not to make read-only.
      */
-    makeEditable(
-        displayBlock: HTMLElement,
-        selection: Annotation,
-    ): HTMLElement {
-        //
-
-        // if it's already editable, don't do anything
-        if (displayBlock.getAttribute("class") == "annotation-edit-container") {
-            return displayBlock;
-        }
-
-        displayBlock.setAttribute("class", "annotation-edit-container");
-        const textInput = displayBlock.querySelector("div");
-        if (textInput) {
-            textInput.setAttribute("class", "annotation-editor");
-            textInput.setAttribute("contenteditable", "true");
-            textInput.focus();
-            // add save and cancel buttons
-            displayBlock.append(
-                new SaveButton(
-                    selection,
-                    textInput,
-                    displayBlock,
-                    this.handleSaveAnnotation.bind(this),
-                ),
-            );
-            displayBlock.append(
-                new CancelButton(
-                    selection,
-                    displayBlock,
-                    this.makeReadOnly.bind(this),
-                    this.anno.cancelSelected,
-                ),
-            );
-        }
-
-        // if this is a saved annotation, add delete button
-        if (displayBlock.dataset.annotationId) {
-            displayBlock.append(
-                new DeleteButton(
-                    displayBlock,
-                    this.handleDeleteAnnotation.bind(this),
-                ),
-            );
-        }
-
-        return displayBlock;
-    }
-
-    /**
-     * Makes an existing display block read-only.
-     *
-     * @param {HTMLElement} displayBlock Existing display block.
-     * @param {Annotation} [annotation] Annotorious annotation (optional).
-     * @returns {HTMLElement} The passed display block, but read-only.
-     */
-    makeReadOnly(
-        displayBlock: HTMLElement,
-        annotation?: Annotation,
-    ): HTMLElement {
-        // convert a container that has been made editable back to display format
-        // annotation is optional; used to reset content if necessary
-        displayBlock.setAttribute("class", "annotation-display-container");
-        const textInput = displayBlock.querySelector("div");
-        if (textInput) {
-            textInput.setAttribute("class", "");
-            textInput.setAttribute("contenteditable", "false");
-            // restore the original content
-            if (
-                annotation &&
-                annotation.body !== undefined &&
-                Array.isArray(annotation.body)
-            ) {
-                textInput.innerHTML = annotation.body[0].value;
-                // add the annotation again to update the image selection region,
-                // in case the user has modified it and wants to cancel
-                this.anno.addAnnotation(annotation);
-            }
-        }
-        // remove buttons (or should we just hide them?)
-        displayBlock.querySelectorAll("button").forEach((el) => el.remove());
-
-        return displayBlock;
-    }
-
-    /**
-     * Sets all display blocks to read-only.
-     */
-    makeAllReadOnly() {
-        // make sure no display block is editable
+    makeAllReadOnlyExcept(annotationBlock: AnnotationBlock) {
         document
             .querySelectorAll(".annotation-edit-container")
-            .forEach((container) => {
-                if (container instanceof HTMLElement)
-                    this.makeReadOnly(container);
+            .forEach((block) => {
+                if (
+                    block instanceof AnnotationBlock &&
+                    block !== annotationBlock
+                ) {
+                    block.makeReadOnly();
+                }
             });
     }
 }
