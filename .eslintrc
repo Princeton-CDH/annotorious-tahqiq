@@ -4,18 +4,53 @@
     "parserOptions": {
         "project": "./tsconfig.json"
     },
-    "plugins": ["@typescript-eslint/eslint-plugin"],
+    "plugins": ["@typescript-eslint/eslint-plugin", "jsdoc"],
     "extends": [
         "eslint:recommended",
         "plugin:import/recommended",
         "plugin:@typescript-eslint/eslint-recommended",
         "plugin:@typescript-eslint/recommended",
-        "airbnb-typescript/base"
+        "airbnb-typescript/base",
+        "plugin:jsdoc/recommended"
     ],
     "rules": {
         "@typescript-eslint/indent": ["error", 4],
         "@typescript-eslint/no-unused-vars": "error",
-        "@typescript-eslint/quotes": [2, "double", "avoid-escape"]
+        "@typescript-eslint/quotes": [2, "double", "avoid-escape"],
+        "jsdoc/require-jsdoc": [
+            1,
+            {
+                "contexts": [
+                    "ArrowFunctionExpression",
+                    "ClassDeclaration",
+                    "ClassExpression",
+                    "FunctionDeclaration",
+                    "FunctionExpression",
+                    "MethodDefinition",
+                    "TSInterfaceDeclaration",
+                    "TSMethodSignature"
+                ]
+            }
+        ],
+        "jsdoc/require-description": [
+            1,
+            {
+                "contexts": [
+                    "ArrowFunctionExpression",
+                    "ClassDeclaration",
+                    "ClassExpression",
+                    "FunctionDeclaration",
+                    "FunctionExpression",
+                    "MethodDefinition",
+                    "TSInterfaceDeclaration",
+                    "TSMethodSignature"
+                ]
+            }
+        ],
+        "max-len": ["error", { "code": 100, "tabWidth": 4 }]
     },
-    "ignorePatterns": [".eslintrc", "webpack.config.js", "dist/**/*"]
+    "settings": {
+        "jsdoc": { "mode": "typescript" }
+    },
+    "ignorePatterns": [".eslintrc", "*.config.js", "dist/**/*"]
 }
