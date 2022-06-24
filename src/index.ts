@@ -33,16 +33,20 @@ class TranscriptionEditor {
         this.annotationContainer = annotationContainer;
 
         // define custom elements
-        customElements.define("save-button", SaveButton, { extends: "button" });
-        customElements.define("cancel-button", CancelButton, {
-            extends: "button",
-        });
-        customElements.define("delete-button", DeleteButton, {
-            extends: "button",
-        });
-        customElements.define("annotation-block", AnnotationBlock, {
-            extends: "div",
-        });
+        if (!customElements.get("save-button"))
+            customElements.define("save-button", SaveButton, { extends: "button" });
+        if (!customElements.get("cancel-button"))
+            customElements.define("cancel-button", CancelButton, {
+                extends: "button",
+            });
+        if (!customElements.get("delete-button"))
+            customElements.define("delete-button", DeleteButton, {
+                extends: "button",
+            });
+        if (!customElements.get("annotation-block"))
+            customElements.define("annotation-block", AnnotationBlock, {
+                extends: "div",
+            });
 
         // attach event listeners
         document.addEventListener(
@@ -197,7 +201,7 @@ class TranscriptionEditor {
      * @param {AnnotationBlock} annotationBlock The annotation block not to make read-only.
      */
     makeAllReadOnlyExcept(annotationBlock: AnnotationBlock) {
-        document
+        this.annotationContainer
             .querySelectorAll(".annotation-edit-container")
             .forEach((block) => {
                 if (
