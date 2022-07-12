@@ -3,6 +3,19 @@ import { CancelButton } from "./elements/CancelButton";
 import { DeleteButton } from "./elements/DeleteButton";
 import { SaveButton } from "./elements/SaveButton";
 import { Annotation } from "./types/Annotation";
+import { Editor } from "@tinymce/tinymce-webcomponent";
+
+declare global {
+    /**
+     * Exposing new namespace to window, needed to set tinyMCE config
+     */
+    interface Window {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tinyConfig: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tinymce: any;
+    }
+}
 
 /**
  * Custom annotation editor for Geniza project
@@ -34,7 +47,9 @@ class TranscriptionEditor {
 
         // define custom elements
         if (!customElements.get("save-button"))
-            customElements.define("save-button", SaveButton, { extends: "button" });
+            customElements.define("save-button", SaveButton, {
+                extends: "button",
+            });
         if (!customElements.get("cancel-button"))
             customElements.define("cancel-button", CancelButton, {
                 extends: "button",
@@ -58,6 +73,34 @@ class TranscriptionEditor {
             "selectAnnotation",
             this.handleSelectAnnotation.bind(this),
         );
+
+        // Prepare tinyMCE editor custom element and config
+        if (!customElements.get("tinymce-editor")) {
+            Editor();
+        }
+        if (!window.tinyConfig) {
+            window.tinyConfig = {
+                height: 500,
+                plugins: "lists",
+                toolbar:
+                    "language | numlist | strikethrough superscript | undo redo | ",
+                directionality: "rtl",
+                formats: {
+                    strikethrough: { inline: "del" },
+                    // A custom format for insertion element
+                    ins: { inline: "ins" },
+                },
+                content_langs: [
+                    { title: "English", code: "en" },
+                    { title: "Hebrew", code: "he" },
+                    { title: "Arabic", code: "ar" },
+                ],
+                content_style:
+                    "::marker {direction: ltr; margin-left: 1em; }\
+                li { padding-right: 1em; } ins { color: gray; }",
+                menubar: {}, // disable menu bar
+            };
+        }
     }
 
     /**
@@ -151,26 +194,27 @@ class TranscriptionEditor {
 
     /**
      * Saves the passed annotation block's associated annotation using its
-     * text input value, and makes the annotation block read only.
+     * editor content, and makes the annotation block read only.
      *
      * @param {HTMLElement} annotationBlock Annotation block associated with the annotation to save.
      */
     async handleSaveAnnotation(annotationBlock: AnnotationBlock) {
         const annotation = annotationBlock.annotation;
+        const editorContent = window.tinymce.get(annotationBlock.editorId).getContent();
         // add the content to the annotation
         annotation.motivation = "supplementing";
         if (Array.isArray(annotation.body) && annotation.body.length == 0) {
             annotation.body.push({
                 type: "TextualBody",
                 purpose: "transcribing",
-                value: annotationBlock.textInput.textContent || "",
+                value: editorContent || "",
                 format: "text/html",
                 // TODO: transcription motivation, language, etc.
             });
         } else if (Array.isArray(annotation.body)) {
             // assume text content is first body element
             annotation.body[0].value =
-                annotationBlock.textInput.textContent || "";
+                editorContent || "";
         }
         // update with annotorious, then save to storage backend
         await this.anno.updateSelected(annotation);

@@ -10,6 +10,8 @@ import { SaveButton } from "./SaveButton";
 class AnnotationBlock extends HTMLDivElement {
     annotation: Annotation;
 
+    editorId: string | undefined;
+
     onCancel: () => void;
 
     onClick: (annotationBlock: AnnotationBlock) => void;
@@ -83,8 +85,8 @@ class AnnotationBlock extends HTMLDivElement {
     }
 
     /**
-     * Makes an existing annotation block editable by setting its contenteditable
-     * property and adding Save, Cancel, and Delete buttons.
+     * Makes an existing annotation block editable by adding TinyMCE
+     * and adding Save, Cancel, and Delete buttons.
      */
     makeEditable(): void {
         if (this.getAttribute("class") == "annotation-edit-container") {
@@ -93,11 +95,20 @@ class AnnotationBlock extends HTMLDivElement {
 
         this.setAttribute("class", "annotation-edit-container");
         this.textInput.setAttribute("class", "annotation-editor");
-        this.textInput.setAttribute("contenteditable", "true");
+
+        // add TinyMCE
+        window.tinyConfig.init_instance_callback = this.setEditorId.bind(this);
+        const editor = document.createElement("tinymce-editor");
+        editor.setAttribute("config", "tinyConfig");
+        editor.innerHTML = this.textInput.innerHTML;
+        this.textInput.innerHTML = "";
+        this.textInput.append(editor);
         this.textInput.focus();
+
         // add save and cancel buttons
         this.append(new SaveButton(this));
         this.append(new CancelButton(this));
+
         // if this is a saved annotation, add delete button
         if (this.annotation.id) {
             this.append(new DeleteButton(this));
@@ -113,7 +124,6 @@ class AnnotationBlock extends HTMLDivElement {
     makeReadOnly(updateAnnotation?: boolean): void {
         this.setAttribute("class", "annotation-display-container");
         this.textInput.setAttribute("class", "");
-        this.textInput.setAttribute("contenteditable", "false");
         // restore the original content
         if (
             updateAnnotation &&
@@ -124,6 +134,10 @@ class AnnotationBlock extends HTMLDivElement {
             // add the annotation again to update the image selection region,
             // in case the user has modified it and wants to cancel
             this.updateAnnotorious(this.annotation);
+        } else {
+            // otherwise, set the content to TinyMCE editor's content
+            const editorContent = window.tinymce.get(this.editorId).getContent();
+            this.textInput.innerHTML = editorContent;
         }
         // remove buttons (or should we just hide them?)
         this.querySelectorAll("button").forEach((el) => el.remove());
@@ -136,6 +150,16 @@ class AnnotationBlock extends HTMLDivElement {
      */
     setAnnotation(annotation: Annotation) {
         this.annotation = annotation;
+    }
+
+    /**
+     * Set the TinyMCE editor id on this annotation block.
+     *
+     * @param {any} editor The TinyMCE editor instance
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setEditorId(editor:any) {
+        this.editorId = editor.id;
     }
 }
 

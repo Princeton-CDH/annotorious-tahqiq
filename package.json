@@ -49,5 +49,8 @@
     "volta": {
         "node": "16.15.0",
         "npm": "8.8.0"
+    },
+    "dependencies": {
+        "@tinymce/tinymce-webcomponent": "^2.0.0"
     }
 }
