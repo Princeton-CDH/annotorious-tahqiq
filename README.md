@@ -8,6 +8,7 @@ The name taḥqīq (tah-KEEK) comes from the Arabic for text edition.
 
 - Node.JS v16.x
 - NPM v8.x
+- TinyMCE v5 (can be from CDN)
 - Annotorious
 - An annotation store supported by an Annotorious plugin
 
@@ -29,6 +30,8 @@ const storagePlugin = StoragePlugin(); // An Annotorious plugin for storing anno
 const annotationContainer = document.getElementById("annotation"); // An empty HTML element that the editor will be placed into.
 new TranscriptionEditor(client, storagePlugin, annotationContainer);
 ```
+
+An instance of TinyMCE v5 must also be available on the `window` object. This can simply be a script tag that pulls TinyMCE from a CDN.
 
 ## Development
 
