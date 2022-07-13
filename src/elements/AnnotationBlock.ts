@@ -85,6 +85,24 @@ class AnnotationBlock extends HTMLDivElement {
     }
 
     /**
+     * Utility function to encode HTML into entities for use in TinyMCE.
+     *
+     * @param {string} content The HTML content to be encoded.
+     * @returns {string} Content with encoded HTML entities.
+     */
+    encodeHTML(content: string): string {
+        return content.replace(/[&<>'"]/g, 
+            (tag: string) => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "'": "&#39;",
+                '"': "&quot;",
+            }[tag] || tag));
+    }
+
+
+    /**
      * Makes an existing annotation block editable by adding TinyMCE
      * and adding Save, Cancel, and Delete buttons.
      */
@@ -100,7 +118,7 @@ class AnnotationBlock extends HTMLDivElement {
         window.tinyConfig.init_instance_callback = this.setEditorId.bind(this);
         const editor = document.createElement("tinymce-editor");
         editor.setAttribute("config", "tinyConfig");
-        editor.innerHTML = this.textInput.innerHTML;
+        editor.innerHTML = this.encodeHTML(this.textInput.innerHTML);
         this.textInput.innerHTML = "";
         this.textInput.append(editor);
         this.textInput.focus();
