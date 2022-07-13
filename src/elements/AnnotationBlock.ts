@@ -10,7 +10,11 @@ import { SaveButton } from "./SaveButton";
 class AnnotationBlock extends HTMLDivElement {
     annotation: Annotation;
 
-    editorId: string | undefined;
+    textInput: HTMLDivElement;
+
+    editorId?: string;
+
+    labelElement: HTMLHeadingElement;
 
     onCancel: () => void;
 
@@ -19,8 +23,6 @@ class AnnotationBlock extends HTMLDivElement {
     onDelete: (annotationBlock: AnnotationBlock) => void;
 
     onSave: (annotationBlock: AnnotationBlock) => Promise<void>;
-
-    textInput: HTMLDivElement;
 
     updateAnnotorious: (annotation: Annotation) => void;
 
@@ -58,7 +60,14 @@ class AnnotationBlock extends HTMLDivElement {
         // Set class
         this.setAttribute("class", "annotation-display-container");
 
-        // Create and append text input
+        // Create and append label element (div with text, contenteditable in edit mode)
+        this.labelElement = document.createElement("h3");
+        if (this.annotation.label) {
+            this.labelElement.innerHTML = this.annotation.label;
+        }
+        this.append(this.labelElement);
+
+        // Create and append body element (div with text in read-only, TinyMCE in edit mode)
         this.textInput = document.createElement("div");
         if (
             Array.isArray(this.annotation.body) &&
@@ -68,12 +77,16 @@ class AnnotationBlock extends HTMLDivElement {
         }
         this.append(this.textInput);
 
-        // Set click event listener
+        // Set click event listeners
         if (this.annotation.id) {
             this.dataset.annotationId = this.annotation.id;
             this.textInput.addEventListener("click", () => {
                 this.onClick(this);
                 // selection event not fired in this case, so make editable
+                this.makeEditable();
+            });
+            this.labelElement.addEventListener("click", () => {
+                this.onClick(this);
                 this.makeEditable();
             });
         }
@@ -112,13 +125,16 @@ class AnnotationBlock extends HTMLDivElement {
         }
 
         this.setAttribute("class", "annotation-edit-container");
-        this.textInput.setAttribute("class", "annotation-editor");
+
+        // make label editable
+        this.labelElement.setAttribute("contenteditable", "true");
 
         // add TinyMCE
         window.tinyConfig.init_instance_callback = this.setEditorId.bind(this);
         const editor = document.createElement("tinymce-editor");
         editor.setAttribute("config", "tinyConfig");
         editor.innerHTML = this.encodeHTML(this.textInput.innerHTML);
+        this.textInput.setAttribute("class", "annotation-editor");
         this.textInput.innerHTML = "";
         this.textInput.append(editor);
         this.textInput.focus();
@@ -141,14 +157,16 @@ class AnnotationBlock extends HTMLDivElement {
      */
     makeReadOnly(updateAnnotation?: boolean): void {
         this.setAttribute("class", "annotation-display-container");
+        this.labelElement.setAttribute("contenteditable", "false");
         this.textInput.setAttribute("class", "");
         // restore the original content
-        if (
-            updateAnnotation &&
-            Array.isArray(this.annotation.body) &&
-            this.annotation.body.length > 0
-        ) {
-            this.textInput.innerHTML = this.annotation.body[0].value;
+        if (updateAnnotation) {
+            if (Array.isArray(this.annotation.body) && this.annotation.body.length > 0) {
+                this.textInput.innerHTML = this.annotation.body[0].value;
+            }
+            if (this.annotation.label) {
+                this.labelElement.innerHTML = this.annotation.label;
+            }
             // add the annotation again to update the image selection region,
             // in case the user has modified it and wants to cancel
             this.updateAnnotorious(this.annotation);

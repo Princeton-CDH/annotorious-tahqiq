@@ -12,6 +12,7 @@ interface Annotation {
     motivation: string;
     target: Target;
     type: string;
+    label?: string;
 }
 
 /**

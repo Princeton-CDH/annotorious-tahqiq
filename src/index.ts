@@ -193,8 +193,8 @@ class TranscriptionEditor {
     }
 
     /**
-     * Saves the passed annotation block's associated annotation using its
-     * editor content, and makes the annotation block read only.
+     * Saves the passed annotation block's associated annotation using its editor
+     * content (and label if present), and makes the annotation block read only.
      *
      * @param {HTMLElement} annotationBlock Annotation block associated with the annotation to save.
      */
@@ -203,6 +203,9 @@ class TranscriptionEditor {
         const editorContent = window.tinymce.get(annotationBlock.editorId).getContent();
         // add the content to the annotation
         annotation.motivation = "supplementing";
+        if (annotationBlock.labelElement.textContent) {
+            annotation.label = annotationBlock.labelElement.textContent;
+        }
         if (Array.isArray(annotation.body) && annotation.body.length == 0) {
             annotation.body.push({
                 type: "TextualBody",
