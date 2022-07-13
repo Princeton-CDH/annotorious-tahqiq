@@ -61,6 +61,8 @@ To use your modified code in other projects locally, after running the build scr
 npm install --save /path/to/annotorious-tahqiq/
 ```
 
+Then, follow the remaining steps in the [Usage](#usage) section.
+
 ### Organization
 
 This project is written in TypeScript, and organized according to the following scheme:
