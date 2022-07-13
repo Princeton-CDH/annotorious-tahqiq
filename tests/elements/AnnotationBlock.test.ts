@@ -28,11 +28,11 @@ describe("Element initialization", () => {
         const block = new AnnotationBlock(props);
         expect(block.className).toBe("annotation-display-container");
     });
-    it("Should create and append text input", () => {
+    it("Should create and append body and label elements", () => {
         const createElementSpy = jest.spyOn(document, "createElement");
         const block = new AnnotationBlock(props);
-        expect(createElementSpy).toBeCalledTimes(1);
-        expect(block.childNodes.length).toBe(1);
+        expect(createElementSpy).toBeCalledTimes(2);
+        expect(block.childNodes.length).toBe(2);
     });
     it("Should set editable when editable prop is true", () => {
         const makeEditableSpy = jest.spyOn(
