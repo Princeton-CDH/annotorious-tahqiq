@@ -10,7 +10,7 @@ import { SaveButton } from "./SaveButton";
 class AnnotationBlock extends HTMLDivElement {
     annotation: Annotation;
 
-    textInput: HTMLDivElement;
+    bodyElement: HTMLDivElement;
 
     editorId?: string;
 
@@ -68,19 +68,19 @@ class AnnotationBlock extends HTMLDivElement {
         this.append(this.labelElement);
 
         // Create and append body element (div with text in read-only, TinyMCE in edit mode)
-        this.textInput = document.createElement("div");
+        this.bodyElement = document.createElement("div");
         if (
             Array.isArray(this.annotation.body) &&
             this.annotation.body.length > 0
         ) {
-            this.textInput.innerHTML = this.annotation.body[0].value;
+            this.bodyElement.innerHTML = this.annotation.body[0].value;
         }
-        this.append(this.textInput);
+        this.append(this.bodyElement);
 
         // Set click event listeners
         if (this.annotation.id) {
             this.dataset.annotationId = this.annotation.id;
-            this.textInput.addEventListener("click", () => {
+            this.bodyElement.addEventListener("click", () => {
                 this.onClick(this);
                 // selection event not fired in this case, so make editable
                 this.makeEditable();
@@ -133,11 +133,11 @@ class AnnotationBlock extends HTMLDivElement {
         window.tinyConfig.init_instance_callback = this.setEditorId.bind(this);
         const editor = document.createElement("tinymce-editor");
         editor.setAttribute("config", "tinyConfig");
-        editor.innerHTML = this.encodeHTML(this.textInput.innerHTML);
-        this.textInput.setAttribute("class", "annotation-editor");
-        this.textInput.innerHTML = "";
-        this.textInput.append(editor);
-        this.textInput.focus();
+        editor.innerHTML = this.encodeHTML(this.bodyElement.innerHTML);
+        this.bodyElement.setAttribute("class", "annotation-editor");
+        this.bodyElement.innerHTML = "";
+        this.bodyElement.append(editor);
+        this.bodyElement.focus();
 
         // add save and cancel buttons
         this.append(new SaveButton(this));
@@ -158,11 +158,11 @@ class AnnotationBlock extends HTMLDivElement {
     makeReadOnly(updateAnnotation?: boolean): void {
         this.setAttribute("class", "annotation-display-container");
         this.labelElement.setAttribute("contenteditable", "false");
-        this.textInput.setAttribute("class", "");
+        this.bodyElement.setAttribute("class", "");
         // restore the original content
         if (updateAnnotation) {
             if (Array.isArray(this.annotation.body) && this.annotation.body.length > 0) {
-                this.textInput.innerHTML = this.annotation.body[0].value;
+                this.bodyElement.innerHTML = this.annotation.body[0].value;
             }
             if (this.annotation.label) {
                 this.labelElement.innerHTML = this.annotation.label;
@@ -173,7 +173,7 @@ class AnnotationBlock extends HTMLDivElement {
         } else {
             // otherwise, set the content to TinyMCE editor's content
             const editorContent = window.tinymce.get(this.editorId).getContent();
-            this.textInput.innerHTML = editorContent;
+            this.bodyElement.innerHTML = editorContent;
         }
         // remove buttons (or should we just hide them?)
         this.querySelectorAll("button").forEach((el) => el.remove());
