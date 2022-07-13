@@ -8,6 +8,7 @@ The name taḥqīq (tah-KEEK) comes from the Arabic for text edition.
 
 - Node.JS v16.x
 - NPM v8.x
+- TinyMCE v5 (recommended to use script tag pointing to Tiny CDN)
 - Annotorious
 - An annotation store supported by an Annotorious plugin
 
@@ -28,6 +29,12 @@ const client = Annotorious(annotoriousSettings);
 const storagePlugin = StoragePlugin(); // An Annotorious plugin for storing annotations
 const annotationContainer = document.getElementById("annotation"); // An empty HTML element that the editor will be placed into.
 new TranscriptionEditor(client, storagePlugin, annotationContainer);
+```
+
+An instance of TinyMCE v5 must also be available on the `window` object. It is recommended to simply use a script tag that pulls TinyMCE from the official CDN. For example:
+
+```html
+<script src="https://cdn.tiny.cloud/1/API_KEY/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
 ```
 
 ## Development
@@ -53,6 +60,8 @@ To use your modified code in other projects locally, after running the build scr
 ```sh
 npm install --save /path/to/annotorious-tahqiq/
 ```
+
+Then, follow the remaining steps in the [Usage](#usage) section.
 
 ### Organization
 

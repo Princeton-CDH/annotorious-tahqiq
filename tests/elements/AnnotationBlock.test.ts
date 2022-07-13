@@ -48,3 +48,15 @@ describe("Element initialization", () => {
         expect(makeEditableSpy).toBeCalledTimes(1);
     });
 });
+
+describe("HTML encoding utility", () => {
+    it("Should encode special characters as HTML entities", () => {
+        const block = new AnnotationBlock(props);
+        expect(block.encodeHTML("<b>Test</b>")).toBe("&lt;b&gt;Test&lt;/b&gt;");
+        expect(block.encodeHTML("'1 & 2'")).toBe("&#39;1 &amp; 2&#39;");
+    });
+    it("Should not modify strings without TinyMCE special characters", () => {
+        const block = new AnnotationBlock(props);
+        expect(block.encodeHTML("!@#?$test")).toBe("!@#?$test");
+    });
+});
