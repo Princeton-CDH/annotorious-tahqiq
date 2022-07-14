@@ -3,6 +3,8 @@ import { CancelButton } from "./CancelButton";
 import { DeleteButton } from "./DeleteButton";
 import { SaveButton } from "./SaveButton";
 
+import "../styles/AnnotationBlock.scss";
+
 /**
  * HTML div element associated with an annotation, which can be made editable to udpate
  * or delete its associated annotation.
@@ -58,12 +60,14 @@ class AnnotationBlock extends HTMLDivElement {
         this.updateAnnotorious = props.updateAnnotorious;
 
         // Set class
-        this.setAttribute("class", "annotation-display-container");
+        this.setAttribute("class", "tahqiq-block-display");
 
         // Create and append label element (div with text, contenteditable in edit mode)
         this.labelElement = document.createElement("h3");
+        this.labelElement.setAttribute("class", "tahqiq-label-display");
         // Create and append body element (div with text in read-only, TinyMCE in edit mode)
         this.bodyElement = document.createElement("div");
+        this.bodyElement.setAttribute("class", "tahqiq-body-display");
         if (
             Array.isArray(this.annotation.body) &&
             this.annotation.body.length > 0
@@ -117,21 +121,22 @@ class AnnotationBlock extends HTMLDivElement {
      * and adding Save, Cancel, and Delete buttons.
      */
     makeEditable(): void {
-        if (this.getAttribute("class") == "annotation-edit-container") {
+        if (this.getAttribute("class") == "tahqiq-block-editor") {
             return;
         }
 
-        this.setAttribute("class", "annotation-edit-container");
+        this.setAttribute("class", "tahqiq-block-editor");
 
         // make label editable
         this.labelElement.setAttribute("contenteditable", "true");
+        this.labelElement.setAttribute("class", "tahqiq-label-editor");
 
         // add TinyMCE
         window.tinyConfig.init_instance_callback = this.setEditorId.bind(this);
         const editor = document.createElement("tinymce-editor");
         editor.setAttribute("config", "tinyConfig");
         editor.innerHTML = this.encodeHTML(this.bodyElement.innerHTML);
-        this.bodyElement.setAttribute("class", "annotation-editor");
+        this.bodyElement.setAttribute("class", "tahqiq-body-editor");
         this.bodyElement.innerHTML = "";
         this.bodyElement.append(editor);
         this.bodyElement.focus();
@@ -153,9 +158,10 @@ class AnnotationBlock extends HTMLDivElement {
      * updated in Annotorious, otherwise false.
      */
     makeReadOnly(updateAnnotation?: boolean): void {
-        this.setAttribute("class", "annotation-display-container");
+        this.setAttribute("class", "tahqiq-block-display");
         this.labelElement.setAttribute("contenteditable", "false");
-        this.bodyElement.setAttribute("class", "");
+        this.labelElement.setAttribute("class", "tahqiq-label-display");
+        this.bodyElement.setAttribute("class", "tahqiq-body-display");
         // restore the original content
         if (updateAnnotation) {
             if (Array.isArray(this.annotation.body) && this.annotation.body.length > 0) {

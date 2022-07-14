@@ -1,0 +1,17 @@
+.tahqiq-block-display {
+    border: 1px solid rgba(128, 128, 128, 0.5);
+    margin: 0.5rem;
+    padding: 0.5rem;
+    &:hover {
+        border: 1px solid rgba(128, 128, 128, 1);
+        cursor: pointer;
+    }
+}
+
+.tahqiq-block-editor {
+    .tahqiq-label-editor {
+        background-color: white;
+        color: black;
+        min-height: 3em;
+    }
+}

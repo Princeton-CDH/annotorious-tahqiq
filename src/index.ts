@@ -107,9 +107,9 @@ class TranscriptionEditor {
      * Handler for custom annotations loaded event triggered by storage plugin.
      */
     handleAnnotationsLoaded() {
-        // remove any existing annotation displays, in case of update
+        // remove any existing annotation blocks, in case of update
         this.annotationContainer
-            .querySelectorAll(".annotation-display-container")
+            .querySelectorAll(".tahqiq-block-display")
             .forEach((el) => el.remove());
         // display all current annotations
         this.anno.getAnnotations().forEach((annotation: Annotation) => {
@@ -250,7 +250,7 @@ class TranscriptionEditor {
      */
     makeAllReadOnlyExcept(annotationBlock: AnnotationBlock) {
         this.annotationContainer
-            .querySelectorAll(".annotation-edit-container")
+            .querySelectorAll(".tahqiq-block-editor")
             .forEach((block) => {
                 if (
                     block instanceof AnnotationBlock &&
