@@ -17,7 +17,7 @@ class CancelButton extends HTMLButtonElement {
         this.annotationBlock = annotationBlock;
 
         // Set class and content
-        this.setAttribute("class", "cancel");
+        this.classList.add("tahqiq-button", "tahqiq-cancel-button");
         this.textContent = "Cancel";
 
         // Attach click handler

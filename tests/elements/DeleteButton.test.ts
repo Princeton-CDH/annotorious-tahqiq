@@ -17,7 +17,7 @@ describe("Element initialization", () => {
     it("Should set class and text content", () => {
         const annoBlock = new (AnnotationBlock as jest.Mock<AnnotationBlock>)();
         const deleteButton = new DeleteButton(annoBlock);
-        expect(deleteButton.className).toBe("delete");
+        expect(deleteButton.classList).toContain("tahqiq-delete-button");
         expect(deleteButton.textContent).toBe("Delete");
     });
 });

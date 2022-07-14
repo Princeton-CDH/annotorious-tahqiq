@@ -18,7 +18,7 @@ class DeleteButton extends HTMLButtonElement {
         this.annotationBlock = annotationBlock;
 
         // Class and content
-        this.setAttribute("class", "delete");
+        this.classList.add("tahqiq-button", "tahqiq-delete-button");
         this.textContent = "Delete";
 
         this.addEventListener("click", this.handleClick.bind(this));

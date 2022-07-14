@@ -49,6 +49,10 @@ This plugin exposes the following CSS classes that can be used to style its elem
 - `.tahqiq-label-editor`: Editable `h3` elements for block labels
 - `.tahqiq-body-display`: `div` element displaying the content of an annotation body
 - `.tahqiq-body-editor`: `div` element containing the TinyMCE editor for editing an annotation body
+- `.tahqiq-button`: All buttons (save, delete, cancel)
+- `.tahqiq-save-button`: Save button
+- `.tahqiq-delete-button`: Delete button
+- `.tahqiq-cancel-button`: Cancel button
 
 ## Development
 
