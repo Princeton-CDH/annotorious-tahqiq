@@ -62,19 +62,16 @@ class AnnotationBlock extends HTMLDivElement {
 
         // Create and append label element (div with text, contenteditable in edit mode)
         this.labelElement = document.createElement("h3");
-        if (this.annotation.label) {
-            this.labelElement.innerHTML = this.annotation.label;
-        }
-        this.append(this.labelElement);
-
         // Create and append body element (div with text in read-only, TinyMCE in edit mode)
         this.bodyElement = document.createElement("div");
         if (
             Array.isArray(this.annotation.body) &&
             this.annotation.body.length > 0
         ) {
+            this.labelElement.innerHTML = this.annotation.body[0].label || "";
             this.bodyElement.innerHTML = this.annotation.body[0].value;
         }
+        this.append(this.labelElement);
         this.append(this.bodyElement);
 
         // Set click event listeners
@@ -163,9 +160,7 @@ class AnnotationBlock extends HTMLDivElement {
         if (updateAnnotation) {
             if (Array.isArray(this.annotation.body) && this.annotation.body.length > 0) {
                 this.bodyElement.innerHTML = this.annotation.body[0].value;
-            }
-            if (this.annotation.label) {
-                this.labelElement.innerHTML = this.annotation.label;
+                this.labelElement.innerHTML = this.annotation.body[0].label || "";
             }
             // add the annotation again to update the image selection region,
             // in case the user has modified it and wants to cancel

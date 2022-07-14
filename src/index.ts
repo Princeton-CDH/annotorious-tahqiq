@@ -203,21 +203,22 @@ class TranscriptionEditor {
         const editorContent = window.tinymce.get(annotationBlock.editorId).getContent();
         // add the content to the annotation
         annotation.motivation = "supplementing";
-        if (annotationBlock.labelElement.textContent) {
-            annotation.label = annotationBlock.labelElement.textContent;
-        }
         if (Array.isArray(annotation.body) && annotation.body.length == 0) {
             annotation.body.push({
                 type: "TextualBody",
                 purpose: "transcribing",
                 value: editorContent || "",
                 format: "text/html",
+                label: annotationBlock.labelElement.textContent || undefined,
                 // TODO: transcription motivation, language, etc.
             });
         } else if (Array.isArray(annotation.body)) {
             // assume text content is first body element
             annotation.body[0].value =
                 editorContent || "";
+            if (annotationBlock.labelElement.textContent) {
+                annotation.body[0].label = annotationBlock.labelElement.textContent;
+            }
         }
         // update with annotorious, then save to storage backend
         await this.anno.updateSelected(annotation);

@@ -9,6 +9,7 @@ interface Body {
     purpose?: string;
     format?: string;
     language?: string;
+    label?: string;
 }
 
 export { Body };
