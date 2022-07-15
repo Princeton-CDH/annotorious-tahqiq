@@ -19,7 +19,7 @@ class SaveButton extends HTMLButtonElement {
         this.annotationBlock = annotationBlock;
 
         // Set class and content
-        this.setAttribute("class", "save");
+        this.classList.add("tahqiq-button", "tahqiq-save-button");
         this.textContent = "Save";
 
         // Attach click handler

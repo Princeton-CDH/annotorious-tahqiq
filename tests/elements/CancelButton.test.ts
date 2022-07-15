@@ -17,7 +17,7 @@ describe("Element initialization", () => {
     it("Should set class and text content", () => {
         const annoBlock = new (AnnotationBlock as jest.Mock<AnnotationBlock>)();
         const cancelButton = new CancelButton(annoBlock);
-        expect(cancelButton.className).toBe("cancel");
+        expect(cancelButton.classList).toContain("tahqiq-cancel-button");
         expect(cancelButton.textContent).toBe("Cancel");
     });
 });

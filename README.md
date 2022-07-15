@@ -16,6 +16,8 @@ This project uses [Volta](https://volta.sh/) to pin Node and NPM versions.
 
 ## Usage
 
+### Installation
+
 This plugin can be installed with NPM:
 
 ```sh
@@ -36,6 +38,21 @@ An instance of TinyMCE v5 must also be available on the `window` object. It is r
 ```html
 <script src="https://cdn.tiny.cloud/1/API_KEY/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
 ```
+
+### Styling
+
+This plugin exposes the following CSS classes that can be used to style its elements:
+
+- `.tahqiq-block-display`: Container `div` containing an annotation label and body
+- `.tahqiq-block-editor`: Container `div` when in edit mode
+- `.tahqiq-label-display`: `h3` elements for block labels
+- `.tahqiq-label-editor`: Editable `h3` elements for block labels
+- `.tahqiq-body-display`: `div` element displaying the content of an annotation body
+- `.tahqiq-body-editor`: `div` element containing the TinyMCE editor for editing an annotation body
+- `.tahqiq-button`: All buttons (save, delete, cancel)
+- `.tahqiq-save-button`: Save button
+- `.tahqiq-delete-button`: Delete button
+- `.tahqiq-cancel-button`: Cancel button
 
 ## Development
 

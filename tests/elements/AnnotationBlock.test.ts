@@ -26,7 +26,7 @@ describe("Element initialization", () => {
     });
     it("Should set display class", () => {
         const block = new AnnotationBlock(props);
-        expect(block.className).toBe("annotation-display-container");
+        expect(block.className).toBe("tahqiq-block-display");
     });
     it("Should create and append body and label elements", () => {
         const createElementSpy = jest.spyOn(document, "createElement");

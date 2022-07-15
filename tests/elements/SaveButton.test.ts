@@ -17,7 +17,7 @@ describe("Element initialization", () => {
     it("Should set class and text content", () => {
         const annoBlock = new (AnnotationBlock as jest.Mock<AnnotationBlock>)();
         const saveButton = new SaveButton(annoBlock);
-        expect(saveButton.className).toBe("save");
+        expect(saveButton.classList).toContain("tahqiq-save-button");
         expect(saveButton.textContent).toBe("Save");
     });
 });
