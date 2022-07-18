@@ -65,6 +65,7 @@ class AnnotationBlock extends HTMLDivElement {
         // Create and append label element (div with text, contenteditable in edit mode)
         this.labelElement = document.createElement("h3");
         this.labelElement.setAttribute("class", "tahqiq-label-display");
+        this.labelElement.setAttribute("data-placeholder", "Optional label");
         // Create and append body element (div with text in read-only, TinyMCE in edit mode)
         this.bodyElement = document.createElement("div");
         this.bodyElement.setAttribute("class", "tahqiq-body-display");

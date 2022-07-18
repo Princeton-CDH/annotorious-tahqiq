@@ -13,5 +13,10 @@
         background-color: white;
         color: black;
         min-height: 3em;
+        border: 1px solid #ccc;;
+        &[contenteditable=true]:empty:not(:focus):before {
+            content: attr(data-placeholder);
+            color: gray;
+        }
     }
 }
