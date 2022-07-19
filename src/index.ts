@@ -4,6 +4,7 @@ import { DeleteButton } from "./elements/DeleteButton";
 import { SaveButton } from "./elements/SaveButton";
 import { Annotation } from "./types/Annotation";
 import { Editor } from "@tinymce/tinymce-webcomponent";
+import AnnotationServerStorage from "./storage";
 
 declare global {
     /**
@@ -101,6 +102,8 @@ class TranscriptionEditor {
                 menubar: {}, // disable menu bar
             };
         }
+        // TODO: bind changeSelectionTarget to update annotation in annotation block
+        // so that changes will persist
     }
 
     /**
@@ -263,3 +266,5 @@ class TranscriptionEditor {
 }
 
 export default TranscriptionEditor;
+
+export { TranscriptionEditor, AnnotationServerStorage };
