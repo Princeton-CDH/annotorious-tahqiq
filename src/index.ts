@@ -185,7 +185,7 @@ class TranscriptionEditor {
                 this.anno.removeAnnotation(annotationBlock.annotation.id);
                 // calling removeAnnotation doesn't fire the deleteAnnotation,
                 // so we have to trigger the deletion explicitly
-                this.storage.adapter.delete(annotationBlock.annotation.id);
+                this.storage.delete(annotationBlock.annotation);
                 // remove the edit/display displayBlock
                 annotationBlock.remove();
             }
