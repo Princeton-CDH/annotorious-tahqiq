@@ -185,8 +185,7 @@ class AnnotationServerStorage {
      * @param target_uri
      */
     async search(target_uri: string): Promise<void | SavedAnnotation[]> {
-    // async search(target_uri: string) {
-        return fetch(`${this.settings.annotationEndpoint}?target_uri=${target_uri}`, {
+        return fetch(`${this.settings.annotationEndpoint}search/?uri=${target_uri}`, {
             headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json",
@@ -194,10 +193,7 @@ class AnnotationServerStorage {
             },
         })
             .then(response => response.json())
-            // .then(data => { data.map(d => Annotation(d)});
-            // .then(data => console.log(data))
-            // .then(data => {data.items.map(d => <SavedAnnotation>d);});
-            .then(data => <SavedAnnotation[]>data.items);
+            .then(data => <SavedAnnotation[]>data.resources);
         //     .catch(() => this.all());
     }
 
