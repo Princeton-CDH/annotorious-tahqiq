@@ -3,6 +3,7 @@ import { CancelButton } from "./elements/CancelButton";
 import { DeleteButton } from "./elements/DeleteButton";
 import { SaveButton } from "./elements/SaveButton";
 import { Annotation } from "./types/Annotation";
+import { Target } from "./types/Target";
 import { Editor } from "@tinymce/tinymce-webcomponent";
 
 declare global {
@@ -27,6 +28,8 @@ class TranscriptionEditor {
 
     storage;
 
+    currentAnnotationBlock: AnnotationBlock | null;
+
     // TODO: Add typedefs for the Annotorious client (anno) and storage plugin
 
     /**
@@ -44,6 +47,7 @@ class TranscriptionEditor {
         // disable the default annotorious editor (headless mode)
         this.anno.disableEditor = true;
         this.annotationContainer = annotationContainer;
+        this.currentAnnotationBlock = null;
 
         // define custom elements
         if (!customElements.get("save-button"))
@@ -73,6 +77,10 @@ class TranscriptionEditor {
             "selectAnnotation",
             this.handleSelectAnnotation.bind(this),
         );
+        this.anno.on(
+            "changeSelectionTarget",
+            this.handleChangeSelectionTarget.bind(this),
+        );
 
         // Prepare tinyMCE editor custom element and config
         if (!customElements.get("tinymce-editor")) {
@@ -101,6 +109,7 @@ class TranscriptionEditor {
                 menubar: {}, // disable menu bar
             };
         }
+
     }
 
     /**
@@ -162,6 +171,23 @@ class TranscriptionEditor {
             // make sure no other editor is active
             this.makeAllReadOnlyExcept(annotationBlock);
             annotationBlock.makeEditable();
+            // set current annotation block
+            this.currentAnnotationBlock = <AnnotationBlock>annotationBlock;
+        }
+    }
+
+    /**
+     *
+     * Update the cached annotation on the currently selected annotation block
+     * when the target changes.
+     *
+     * @param {Target} target updated target from an Annotorious annotation.
+     */
+    handleChangeSelectionTarget(target: Target) {
+        // if there is an annotation block currently active,
+        // update the cached annotation with the changed target
+        if (this.currentAnnotationBlock != null) {
+            this.currentAnnotationBlock.annotation.target = target;
         }
     }
 

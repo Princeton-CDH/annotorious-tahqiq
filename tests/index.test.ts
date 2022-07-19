@@ -45,7 +45,7 @@ describe("Plugin instantiation", () => {
         new TranscriptionEditor(clientMock, storageMock, container);
         expect(addEventListenerSpy).toBeCalledTimes(1);
         // should also attach even listeners to client events
-        expect(clientMock.on).toBeCalledTimes(2);
+        expect(clientMock.on).toBeCalledTimes(3);
     });
     it("Should define custom elements on initialization", () => {
         new TranscriptionEditor(clientMock, storageMock, container);
