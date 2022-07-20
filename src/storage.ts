@@ -180,12 +180,11 @@ class AnnotationServerStorage {
     /**
      *
      * Search for annotations on the specified target
-     *
-     * @param {target_uri} URI of the target to search for
-     * @param target_uri
+     * 
+     * @param {string} targetUri URI of the target to search for
      */
-    async search(target_uri: string): Promise<void | SavedAnnotation[]> {
-        return fetch(`${this.settings.annotationEndpoint}search/?uri=${target_uri}`, {
+    async search(targetUri: string): Promise<void | SavedAnnotation[]> {
+        return fetch(`${this.settings.annotationEndpoint}search/?uri=${targetUri}`, {
             headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json",
