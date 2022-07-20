@@ -8,7 +8,7 @@ const AnnoLoadEvent = new Event("annotations-loaded");
 // TODO: Add a typedef for the Annotorious client (anno)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 /**
- * Annotorious plugin to use simple annotation server as a storage
+ * Annotorious plugin to use W3C protocol storage
  */
 class AnnotationServerStorage {
     anno;
@@ -60,7 +60,7 @@ class AnnotationServerStorage {
     /**
      * Event handler for the createAnnotation event; adjusts the source if
      * needed, saves the annotation to the store and Annotorious, then returns
-     * the stored annotation retrieved from SAS in a Promise.
+     * the stored annotation retrieved from storage in a Promise.
      *
      * @param {Annotation} annotation V3 (W3C) annotation
      */
@@ -69,7 +69,7 @@ class AnnotationServerStorage {
             annotation.target.source,
         );
 
-        // wait for adapter to return saved annotation from SAS
+        // wait for adapter to return saved annotation from storage
         const newAnnotation: Annotation = await this.create(
             annotation,
         );
@@ -119,7 +119,7 @@ class AnnotationServerStorage {
     }
 
     /**
-     * Save a new annotation to SAS storage.
+     * Save a new annotation to storage.
      *
      * @param {Annotation} annotation V3 (W3C) annotation to save.
      */
