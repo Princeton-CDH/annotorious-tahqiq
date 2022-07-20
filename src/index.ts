@@ -5,6 +5,7 @@ import { SaveButton } from "./elements/SaveButton";
 import { Annotation } from "./types/Annotation";
 import { Target } from "./types/Target";
 import { Editor } from "@tinymce/tinymce-webcomponent";
+import AnnotationServerStorage from "./storage";
 
 declare global {
     /**
@@ -109,7 +110,6 @@ class TranscriptionEditor {
                 menubar: {}, // disable menu bar
             };
         }
-
     }
 
     /**
@@ -208,7 +208,7 @@ class TranscriptionEditor {
                 this.anno.removeAnnotation(annotationBlock.annotation.id);
                 // calling removeAnnotation doesn't fire the deleteAnnotation,
                 // so we have to trigger the deletion explicitly
-                this.storage.adapter.delete(annotationBlock.annotation.id);
+                this.storage.delete(annotationBlock.annotation);
                 // remove the edit/display displayBlock
                 annotationBlock.remove();
             }
@@ -289,3 +289,5 @@ class TranscriptionEditor {
 }
 
 export default TranscriptionEditor;
+
+export { TranscriptionEditor, AnnotationServerStorage };
