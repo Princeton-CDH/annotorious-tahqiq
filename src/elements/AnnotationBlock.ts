@@ -79,19 +79,19 @@ class AnnotationBlock extends HTMLDivElement {
         this.append(this.labelElement);
         this.append(this.bodyElement);
 
-        // Set click event listeners
         if (this.annotation.id) {
             this.dataset.annotationId = this.annotation.id;
-            this.bodyElement.addEventListener("click", () => {
+        }
+
+        // Set click event listener
+        this.addEventListener("click", () => {
+            // if you click on this block, and it is in read-only mode, make editable
+            if (!this.classList.contains("tahqiq-block-editor")) {
                 this.onClick(this);
                 // selection event not fired in this case, so make editable
                 this.makeEditable();
-            });
-            this.labelElement.addEventListener("click", () => {
-                this.onClick(this);
-                this.makeEditable();
-            });
-        }
+            }
+        });
 
         // Set editable if needed
         if (props.editable) {

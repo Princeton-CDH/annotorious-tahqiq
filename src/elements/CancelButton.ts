@@ -26,9 +26,12 @@ class CancelButton extends HTMLButtonElement {
 
     /**
      * On click, cancel edit/create annotation.
+     *
+     * @param {Event} evt Click event
      */
-    handleClick() {
+    handleClick(evt: Event) {
         // cancel the edit
+        evt.stopPropagation(); // ensure parent onClick event isn't called
         // clear the selection from the image
         this.annotationBlock.onCancel();
         if (this.annotationBlock.annotation.id) {
