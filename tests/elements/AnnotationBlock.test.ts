@@ -47,6 +47,11 @@ describe("Element initialization", () => {
         });
         expect(makeEditableSpy).toBeCalledTimes(1);
     });
+    it("Should add click event listener", () => {
+        const addEventListenerSpy = jest.spyOn(AnnotationBlock.prototype, "addEventListener");
+        new AnnotationBlock(props);
+        expect(addEventListenerSpy).toBeCalledTimes(1);
+    });
 });
 
 describe("HTML encoding utility", () => {
