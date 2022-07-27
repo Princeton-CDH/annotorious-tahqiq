@@ -47,6 +47,33 @@ describe("Element initialization", () => {
         });
         expect(makeEditableSpy).toBeCalledTimes(1);
     });
+    it("Should add click event listener", () => {
+        const addEventListenerSpy = jest.spyOn(AnnotationBlock.prototype, "addEventListener");
+        new AnnotationBlock(props);
+        expect(addEventListenerSpy).toBeCalledTimes(1);
+    });
+});
+
+describe("Click event", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+    it("Should call onClick and makeEditable if in read-only mode", () => {
+        const block = new AnnotationBlock(props);
+        const evt = new MouseEvent("click");
+        block.dispatchEvent(evt);
+        expect(block.onClick).toHaveBeenCalledTimes(1);
+        expect(block.makeEditable).toHaveBeenCalledTimes(1);
+    });
+    it("Should do nothing if in editor mode", () => {
+        const block = new AnnotationBlock(props);
+        // set to editor mode
+        block.classList.add("tahqiq-block-editor");
+        const evt = new MouseEvent("click");
+        block.dispatchEvent(evt);
+        expect(block.onClick).toHaveBeenCalledTimes(0);
+        expect(block.makeEditable).toHaveBeenCalledTimes(0);
+    });
 });
 
 describe("HTML encoding utility", () => {

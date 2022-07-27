@@ -28,8 +28,11 @@ class SaveButton extends HTMLButtonElement {
 
     /**
      * Calls the save function from the annotation block.
+     *
+     * @param {Event} evt Click event
      */
-    async handleClick(): Promise<void> {
+    async handleClick(evt: Event): Promise<void> {
+        evt.stopPropagation(); // ensure parent onClick event isn't called
         await this.annotationBlock.onSave(this.annotationBlock);
     }
 }
