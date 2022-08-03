@@ -8,6 +8,7 @@ import type { Target } from "./Target";
 interface Annotation {
     "@context": string;
     body: Body | Body[];
+    "dc:source"?: string;
     id?: string;
     motivation: string;
     target: Target;
