@@ -68,6 +68,10 @@ class AnnotationServerStorage {
         annotation.target.source = this.adjustTargetSource(
             annotation.target.source,
         );
+        // save source URI to dc:source attribute on annotation
+        if (this.settings.sourceUri) {
+            annotation["dc:source"] = this.settings.sourceUri;
+        }
 
         // wait for adapter to return saved annotation from storage
         const newAnnotation: Annotation = await this.create(
@@ -184,7 +188,9 @@ class AnnotationServerStorage {
      * @param {string} targetUri URI of the target to search for
      */
     async search(targetUri: string): Promise<void | SavedAnnotation[]> {
-        return fetch(`${this.settings.annotationEndpoint}search/?uri=${targetUri}`, {
+        const { annotationEndpoint, sourceUri } = this.settings;
+        const sourceQuery = sourceUri ? `&source=${sourceUri}` : "";
+        return fetch(`${annotationEndpoint}search/?uri=${targetUri}${sourceQuery}`, {
             headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json",

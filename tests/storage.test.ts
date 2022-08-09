@@ -30,6 +30,7 @@ const settings = {
     manifest: "fakeManifest",
     target: "fakeCanvas",
     csrf_token: "fakeToken",
+    sourceUri: "https://fakesource.uri",
 };
 
 // a fake annotation
@@ -113,13 +114,20 @@ describe("Event handlers", () => {
             JSON.stringify({
                 ...fakeAnnotation,
                 id: "assignedId",
+                "dc:source": "https://fakesource.uri",
             }),
             {
                 status: 200,
                 statusText: "ok",
             },
         );
+        const createSpy = jest.spyOn(AnnotationServerStorage.prototype, "create");
         await clientMock.emit("createAnnotation", fakeAnnotation);
+        // should include dc:source in annotation passed to create method
+        expect(createSpy).toHaveBeenCalledWith({
+            ...fakeAnnotation,
+            "dc:source": "https://fakesource.uri",
+        });
         // should get new id from server
         const newAnnotation = {
             ...fakeAnnotation,
@@ -163,15 +171,14 @@ describe("Event handlers", () => {
                 statusText: "ok",
             },
         );
-
-        const newAnnotation = {
+        const newAnnotation2 = {
             ...fakeAnnotation,
             id: "assignedId",
             target: { source: "fakesource" },
         };
         clientMock.emit("updateAnnotation", annotation, previous);
         // should call addAnnotation on client
-        expect(clientMock.addAnnotation).toHaveBeenCalledWith(newAnnotation);
+        expect(clientMock.addAnnotation).toHaveBeenCalledWith(newAnnotation2);
     });
 
     it("should respond to emitted deleteAnnotation event with handler", async () => {
