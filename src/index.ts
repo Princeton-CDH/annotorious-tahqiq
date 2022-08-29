@@ -261,6 +261,8 @@ class TranscriptionEditor {
                 annotation.body[0].label = annotationBlock.labelElement.textContent;
             }
         }
+        console.log("[handleSaveAnnotation] Selection:");
+        console.log(annotation);
         // update with annotorious, then save to storage backend
         await this.anno.updateSelected(annotation);
         this.anno.saveSelected();

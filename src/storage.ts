@@ -72,6 +72,8 @@ class AnnotationServerStorage {
         if (this.settings.sourceUri) {
             annotation["dc:source"] = this.settings.sourceUri;
         }
+        console.log("[handleCreateAnnotation] After Annotorious processing:");
+        console.log(annotation);
 
         // wait for adapter to return saved annotation from storage
         const newAnnotation: Annotation = await this.create(
