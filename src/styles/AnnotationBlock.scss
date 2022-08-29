@@ -1,3 +1,4 @@
+// Read-only mode annotation block styling
 .tahqiq-block-display {
     border: 1px solid rgba(128, 128, 128, 0.5);
     margin: 0.5rem;
@@ -6,9 +7,15 @@
         border: 1px solid rgba(128, 128, 128, 1);
         cursor: pointer;
     }
+    // Dragged over styling
+    &.tahqiq-drag-target {
+        border: 2px dashed rgba(128, 128, 128, 0.5);
+    }
 }
 
+// Edit mode annotation block styling
 .tahqiq-block-editor {
+    // Editable label with placeholder
     .tahqiq-label-editor {
         background-color: white;
         color: black;

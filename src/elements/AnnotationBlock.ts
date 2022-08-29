@@ -24,6 +24,8 @@ class AnnotationBlock extends HTMLDivElement {
 
     onDelete: (annotationBlock: AnnotationBlock) => void;
 
+    onDragOver: (annotationBlock: AnnotationBlock | null) => void;
+
     onSave: (annotationBlock: AnnotationBlock) => Promise<void>;
 
     updateAnnotorious: (annotation: Annotation) => void;
@@ -36,6 +38,7 @@ class AnnotationBlock extends HTMLDivElement {
      * @param {boolean} props.editable True if this annotation block should be editable,
      * otherwise false.
      * @param {Function} props.onClick Click handler function.
+     * @param {Function} props.onDragOver Dragover handler function.
      * @param {Function} props.onSave Save annotation handler function.
      * @param {Function} props.onDelete Delete annotation handler function.
      * @param {Function} props.onCancel Cancel annotation handler function.
@@ -49,6 +52,7 @@ class AnnotationBlock extends HTMLDivElement {
         onClick: (annotationBlock: AnnotationBlock) => void;
         onDelete: (annotationBlock: AnnotationBlock) => void;
         onSave: (annotationBlock: AnnotationBlock) => Promise<void>;
+        onDragOver: (annotationBlock: AnnotationBlock | null) => void;
         updateAnnotorious: (annotation: Annotation) => void;
     }) {
         super();
@@ -56,6 +60,7 @@ class AnnotationBlock extends HTMLDivElement {
         this.onCancel = props.onCancel;
         this.onClick = props.onClick;
         this.onDelete = props.onDelete;
+        this.onDragOver = props.onDragOver;
         this.onSave = props.onSave;
         this.updateAnnotorious = props.updateAnnotorious;
 
@@ -93,6 +98,13 @@ class AnnotationBlock extends HTMLDivElement {
             }
         });
 
+        // Set drag event listeners
+        this.draggable = true;
+        this.addEventListener("dragstart", this.startDrag.bind(this));
+        this.addEventListener("dragover", () => this.onDragOver(this));
+        this.addEventListener("dragend", () => this.onDragOver(null));
+        // this.addEventListener("drop", dropBlock);
+
         // Set editable if needed
         if (props.editable) {
             this.makeEditable();
@@ -127,6 +139,7 @@ class AnnotationBlock extends HTMLDivElement {
         }
 
         this.setAttribute("class", "tahqiq-block-editor");
+        this.draggable = false;
 
         // make label editable
         this.labelElement.setAttribute("contenteditable", "true");
@@ -160,6 +173,7 @@ class AnnotationBlock extends HTMLDivElement {
      */
     makeReadOnly(updateAnnotation?: boolean): void {
         this.setAttribute("class", "tahqiq-block-display");
+        this.draggable = true;
         this.labelElement.setAttribute("contenteditable", "false");
         this.labelElement.setAttribute("class", "tahqiq-label-display");
         this.bodyElement.setAttribute("class", "tahqiq-body-display");
@@ -198,6 +212,29 @@ class AnnotationBlock extends HTMLDivElement {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setEditorId(editor:any) {
         this.editorId = editor.id;
+    }
+
+    /**
+     * On drag start, set the drag data to the dragged item's ID
+     *
+     * @param {DragEvent} evt The "dragstart" DragEvent
+     */
+    startDrag(evt: DragEvent) {
+        const target = evt.target as AnnotationBlock;
+        evt.dataTransfer?.setData("text", target?.dataset?.annotationId || "");
+    }
+
+    /**
+     * When a block is dragged over, give it "tahqiq-drag-target" style; else, remove that style.
+     *
+     * @param {boolean} draggedOver Boolean indicating whether this block is being dragged over.
+     */
+    setDraggedOver(draggedOver: boolean): void {
+        if (draggedOver) {
+            this.classList.add("tahqiq-drag-target");
+        } else {
+            this.classList.remove("tahqiq-drag-target");
+        }
     }
 }
 

@@ -121,19 +121,28 @@ class TranscriptionEditor {
             .querySelectorAll(".tahqiq-block-display")
             .forEach((el) => el.remove());
         // display all current annotations
-        this.anno.getAnnotations().forEach((annotation: Annotation) => {
-            this.annotationContainer.append(
-                new AnnotationBlock({
-                    annotation,
-                    editable: false,
-                    onCancel: this.anno.cancelSelected,
-                    onClick: this.handleClickAnnotationBlock.bind(this),
-                    onDelete: this.handleDeleteAnnotation.bind(this),
-                    onSave: this.handleSaveAnnotation.bind(this),
-                    updateAnnotorious: this.anno.addAnnotation,
-                }),
-            );
-        });
+        this.anno
+            .getAnnotations()
+            // sort by position attribute if present on both annotations
+            .sort((a: Annotation, b: Annotation) =>
+                (a["schema:position"] && b["schema:position"])
+                    ? a["schema:position"] - b["schema:position"]
+                    : 0,
+            )
+            .forEach((annotation: Annotation) => {
+                this.annotationContainer.append(
+                    new AnnotationBlock({
+                        annotation,
+                        editable: false,
+                        onCancel: this.anno.cancelSelected,
+                        onClick: this.handleClickAnnotationBlock.bind(this),
+                        onDelete: this.handleDeleteAnnotation.bind(this),
+                        onDragOver: this.handleDragOverAnnotationBlock.bind(this),
+                        onSave: this.handleSaveAnnotation.bind(this),
+                        updateAnnotorious: this.anno.addAnnotation,
+                    }),
+                );
+            });
     }
 
     /**
@@ -149,6 +158,7 @@ class TranscriptionEditor {
                 onCancel: this.anno.cancelSelected,
                 onClick: this.handleClickAnnotationBlock.bind(this),
                 onDelete: this.handleDeleteAnnotation.bind(this),
+                onDragOver: this.handleDragOverAnnotationBlock.bind(this),
                 onSave: this.handleSaveAnnotation.bind(this),
                 updateAnnotorious: this.anno.addAnnotation,
             }),
@@ -229,6 +239,12 @@ class TranscriptionEditor {
         const editorContent = window.tinymce.get(annotationBlock.editorId).getContent();
         // add the content to the annotation
         annotation.motivation = "supplementing";
+        // set position attribute to number of existing annotations + 1
+        if (!annotation["schema:position"] && !annotation.id) {
+            annotation["schema:position"] = this.annotationContainer
+                .querySelectorAll(".tahqiq-block-display")
+                .length + 1;
+        }
         if (Array.isArray(annotation.body) && annotation.body.length == 0) {
             annotation.body.push({
                 type: "TextualBody",
@@ -240,8 +256,7 @@ class TranscriptionEditor {
             });
         } else if (Array.isArray(annotation.body)) {
             // assume text content is first body element
-            annotation.body[0].value =
-                editorContent || "";
+            annotation.body[0].value = editorContent || "";
             if (annotationBlock.labelElement.textContent) {
                 annotation.body[0].label = annotationBlock.labelElement.textContent;
             }
@@ -267,6 +282,27 @@ class TranscriptionEditor {
             // make sure no other annotation blocks are editable
             this.makeAllReadOnlyExcept(annotationBlock);
         }
+    }
+
+    /**
+     * Sets the passed annotation to "dragged over" state, and all others to not dragged over.
+     *
+     * @param {AnnotationBlock | null} annotationBlock The annotation block to set dragged over.
+     * If null is passed, will set all annotation blocks to "not dragged over" state.
+     */
+    handleDragOverAnnotationBlock(annotationBlock: AnnotationBlock | null) {
+        this.annotationContainer
+            .querySelectorAll(".tahqiq-block-display")
+            .forEach((block) => {
+                if (
+                    block instanceof AnnotationBlock &&
+                    block === annotationBlock
+                ) {
+                    block.setDraggedOver(true);
+                } else if (block instanceof AnnotationBlock) {
+                    block.setDraggedOver(false);
+                }
+            });
     }
 
     /**
