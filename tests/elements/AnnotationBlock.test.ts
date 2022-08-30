@@ -14,6 +14,7 @@ const props = {
     onClick: jest.fn(),
     onDelete: jest.fn(),
     onDragOver: jest.fn(),
+    onReorder: jest.fn(),
     onSave: jest.fn(),
     updateAnnotorious: jest.fn(),
 };

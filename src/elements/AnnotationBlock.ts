@@ -26,6 +26,8 @@ class AnnotationBlock extends HTMLDivElement {
 
     onDragOver: (annotationBlock: AnnotationBlock | null) => void;
 
+    onReorder: (evt: DragEvent) => void;
+
     onSave: (annotationBlock: AnnotationBlock) => Promise<void>;
 
     updateAnnotorious: (annotation: Annotation) => void;
@@ -37,11 +39,12 @@ class AnnotationBlock extends HTMLDivElement {
      * @param {Annotation} props.annotation Annotation to associate with this annotation block.
      * @param {boolean} props.editable True if this annotation block should be editable,
      * otherwise false.
+     * @param {Function} props.onCancel Cancel annotation handler function.
      * @param {Function} props.onClick Click handler function.
+     * @param {Function} props.onDelete Delete annotation handler function.
      * @param {Function} props.onDragOver Dragover handler function.
      * @param {Function} props.onSave Save annotation handler function.
-     * @param {Function} props.onDelete Delete annotation handler function.
-     * @param {Function} props.onCancel Cancel annotation handler function.
+     * @param {Function} props.onReorder Drop event handler function.
      * @param {Function} props.updateAnnotorious Function that updates this annotation in the
      * Annotorious display.
      */
@@ -51,8 +54,9 @@ class AnnotationBlock extends HTMLDivElement {
         onCancel: () => void;
         onClick: (annotationBlock: AnnotationBlock) => void;
         onDelete: (annotationBlock: AnnotationBlock) => void;
-        onSave: (annotationBlock: AnnotationBlock) => Promise<void>;
         onDragOver: (annotationBlock: AnnotationBlock | null) => void;
+        onReorder: (evt: DragEvent) => void;
+        onSave: (annotationBlock: AnnotationBlock) => Promise<void>;
         updateAnnotorious: (annotation: Annotation) => void;
     }) {
         super();
@@ -61,6 +65,7 @@ class AnnotationBlock extends HTMLDivElement {
         this.onClick = props.onClick;
         this.onDelete = props.onDelete;
         this.onDragOver = props.onDragOver;
+        this.onReorder = props.onReorder;
         this.onSave = props.onSave;
         this.updateAnnotorious = props.updateAnnotorious;
 
@@ -101,9 +106,12 @@ class AnnotationBlock extends HTMLDivElement {
         // Set drag event listeners
         this.draggable = true;
         this.addEventListener("dragstart", this.startDrag.bind(this));
-        this.addEventListener("dragover", () => this.onDragOver(this));
+        this.addEventListener("dragover", (evt) => {
+            evt.preventDefault();
+            this.onDragOver(this);
+        });
         this.addEventListener("dragend", () => this.onDragOver(null));
-        // this.addEventListener("drop", dropBlock);
+        this.addEventListener("drop", this.onReorder);
 
         // Set editable if needed
         if (props.editable) {

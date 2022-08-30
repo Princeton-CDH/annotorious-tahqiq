@@ -138,6 +138,7 @@ class TranscriptionEditor {
                         onClick: this.handleClickAnnotationBlock.bind(this),
                         onDelete: this.handleDeleteAnnotation.bind(this),
                         onDragOver: this.handleDragOverAnnotationBlock.bind(this),
+                        onReorder: this.handleDropAnnotationBlock.bind(this),
                         onSave: this.handleSaveAnnotation.bind(this),
                         updateAnnotorious: this.anno.addAnnotation,
                     }),
@@ -159,6 +160,7 @@ class TranscriptionEditor {
                 onClick: this.handleClickAnnotationBlock.bind(this),
                 onDelete: this.handleDeleteAnnotation.bind(this),
                 onDragOver: this.handleDragOverAnnotationBlock.bind(this),
+                onReorder: this.handleDropAnnotationBlock.bind(this),
                 onSave: this.handleSaveAnnotation.bind(this),
                 updateAnnotorious: this.anno.addAnnotation,
             }),
@@ -236,7 +238,14 @@ class TranscriptionEditor {
      */
     async handleSaveAnnotation(annotationBlock: AnnotationBlock) {
         const annotation = annotationBlock.annotation;
-        const editorContent = window.tinymce.get(annotationBlock.editorId).getContent();
+        const tinymceEditor  = window.tinymce.get(annotationBlock.editorId);
+        let editorContent;
+        if (tinymceEditor) {
+            editorContent = window.tinymce.get(annotationBlock.editorId).getContent();
+        } else if (Array.isArray(annotation.body) && annotation.body.length !== 0) {
+            // if saving without tinymce (e.g. annotation reorder), use existing body
+            editorContent = annotation.body[0].value;
+        }
         // add the content to the annotation
         annotation.motivation = "supplementing";
         // set position attribute to number of existing annotations + 1
@@ -263,12 +272,17 @@ class TranscriptionEditor {
         }
         console.log("[handleSaveAnnotation] Selection:");
         console.log(annotation);
+        if (!this.anno.getSelected() && annotation.id) {
+            // if nothing selected in annotorious and anno has an id already (e.g. updating a
+            // saved annotation via reorder), then call API function directly
+            await this.storage.update(annotation);
+        }
         // update with annotorious, then save to storage backend
         await this.anno.updateSelected(annotation);
         this.anno.saveSelected();
         // update annotation block with new annotation and set inactive
         annotationBlock.setAnnotation(annotation);
-        annotationBlock.makeReadOnly();
+        annotationBlock.makeReadOnly(!tinymceEditor);
     }
 
     /**
@@ -305,6 +319,47 @@ class TranscriptionEditor {
                     block.setDraggedOver(false);
                 }
             });
+    }
+
+    /**
+     * When an annotation block is dropped, set its position and check its neighbors' positions
+     * for changes. If any positions changed, save changed annotations.
+     *
+     * @param {DragEvent} evt The "drop" event that triggered this handler
+     */
+    async handleDropAnnotationBlock(evt: DragEvent) {
+        evt.preventDefault();
+        const blocks = this.annotationContainer.querySelectorAll(".tahqiq-block-display");
+        const blockArray = Array.from(blocks);
+        const draggedBlockId = evt.dataTransfer?.getData("text");
+        const draggedBlock = blockArray.find((block: Element) =>
+            block instanceof AnnotationBlock &&
+            block.dataset?.annotationId === draggedBlockId,
+        );
+        if (draggedBlock && evt.currentTarget instanceof AnnotationBlock) {
+            const draggedIndex = blockArray.indexOf(draggedBlock);
+            const droppedIndex = blockArray.indexOf(evt.currentTarget);
+            // move the dragged block to the correct index
+            blockArray.splice(draggedIndex, 1);
+            blockArray.splice(droppedIndex, 0, draggedBlock);
+            await Promise.all(blockArray.map(async (block, i) => {
+                const position = i + 1;
+                if (
+                    block instanceof AnnotationBlock &&
+                    block.annotation["schema:position"] !== position
+                ) {
+                    // if position changed, set schema:position and save
+                    block.setAnnotation({
+                        ...block.annotation,
+                        "schema:position": position,
+                    });
+                    await block.onSave(block);
+                }
+                return Promise.resolve();
+            }));
+            // reload all annotations
+            await this.storage.loadAnnotations();
+        }
     }
 
     /**
