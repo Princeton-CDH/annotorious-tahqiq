@@ -1,5 +1,16 @@
 import { TranscriptionEditor } from "../src";
+import { AnnotationBlock } from "../src/elements/AnnotationBlock";
 
+// a fake annotation
+const fakeAnnotation = {
+    id: "someId",
+    "@context": "fakeContext",
+    body: {},
+    motivation: "commenting",
+    "schema:position": 1,
+    target: { source: "fakesource" },
+    type: "Annotation",
+};
 
 // Mock the Annotorious client
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -8,7 +19,17 @@ const clientMock = {
     disableEditor: false,
     addAnnotation: jest.fn(),
     removeAnnotation: jest.fn(),
-    getAnnotations: jest.fn(),
+    getAnnotations: jest.fn().mockReturnValue([
+        {
+            ...fakeAnnotation,
+            "schema:position": 3,
+        },
+        fakeAnnotation,
+        {
+            ...fakeAnnotation,
+            "schema:position": 2,
+        },
+    ]),
     cancelSelected: jest.fn(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     on: jest.fn().mockImplementation((evtName: string, handler: () => any) => {
@@ -31,16 +52,7 @@ const storageMock = {
 };
 const container = document.createElement("annotation-block");
 
-// mock custom elements definition; required to prevent naming conflicts
-const customElementsSpy = jest.spyOn(customElements, "define");
-customElementsSpy.mockImplementation(() => jest.fn());
-
 describe("Plugin instantiation", () => {
-    beforeEach(() => {
-        // ensure call count is reset
-        customElementsSpy.mockReset();
-    });
-
     it("Should attach event listeners on initialization", () => {
         const addEventListenerSpy = jest.spyOn(document, "addEventListener");
         new TranscriptionEditor(clientMock, storageMock, container);
@@ -50,6 +62,62 @@ describe("Plugin instantiation", () => {
     });
     it("Should define custom elements on initialization", () => {
         new TranscriptionEditor(clientMock, storageMock, container);
-        expect(customElementsSpy).toBeCalledTimes(4);
+        expect(customElements.get("annotation-block")).toBeDefined();
+        expect(customElements.get("save-button")).toBeDefined();
+        expect(customElements.get("delete-button")).toBeDefined();
+        expect(customElements.get("cancel-button")).toBeDefined();
+    });
+});
+
+describe("Load annotations", () => {
+    it("Should sort annotations by schema:position attribute", () => {
+        const editor = new TranscriptionEditor(clientMock, storageMock, container);
+        editor.handleAnnotationsLoaded();
+        const blocks = editor.annotationContainer.querySelectorAll("annotation-block");
+        blocks.forEach((block, index) => {
+            if (block instanceof AnnotationBlock) {
+                expect(block.annotation["schema:position"]).toEqual(index + 1);
+            }
+        });
+    });
+});
+
+describe("Set annotations draggable", () => {
+    it("Should change the draggable property on all annotation blocks", () => {
+        const editor = new TranscriptionEditor(clientMock, storageMock, container);
+        editor.handleAnnotationsLoaded();
+        editor.setAllDraggability(false);
+        const blocks = editor.annotationContainer.querySelectorAll("annotation-block");
+        blocks.forEach((block) => {
+            if (block instanceof AnnotationBlock) {
+                expect(block.draggable).toBe(false);
+            }
+        });
+    });
+});
+
+describe("Drag over annotation", () => {
+    it("Should add drag target class to passed block and remove from all others", () => {
+        const editor = new TranscriptionEditor(clientMock, storageMock, container);
+        editor.handleAnnotationsLoaded();
+        const blocks = editor.annotationContainer.querySelectorAll("annotation-block");
+        const draggedOver = blocks[0];
+        const other = blocks[1];
+        if (draggedOver && draggedOver instanceof AnnotationBlock) {
+            editor.handleDragOverAnnotationBlock(draggedOver);
+            expect(draggedOver.classList.contains("tahqiq-drag-target")).toBe(true);
+            if (other) {
+                expect(other.classList.contains("tahqiq-drag-target")).toBe(false);
+            }
+        }
+    });
+    it("Should remove drag target class from all blocks if null passed", () => {
+        const editor = new TranscriptionEditor(clientMock, storageMock, container);
+        editor.handleAnnotationsLoaded();
+        editor.handleDragOverAnnotationBlock(null);
+        const blocks = editor.annotationContainer.querySelectorAll("annotation-block");
+        blocks.forEach((block) => {
+            expect(block.classList.contains("tahqiq-drag-target")).toBe(false);
+        });
     });
 });

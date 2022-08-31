@@ -87,3 +87,16 @@ describe("HTML encoding utility", () => {
         expect(block.encodeHTML("!@#?$test")).toBe("!@#?$test");
     });
 });
+
+describe("Drag event", () => {
+    // TODO: Test "dragstart" and dataTransfer once DragEvent is implemented in jsdom
+    // https://github.com/jsdom/jsdom/blob/28ed5/test/web-platform-tests/to-run.yaml#L648-L654
+
+    it("Adds or removes drag target class when block dragged over", () => {
+        const block = new AnnotationBlock(props);
+        block.setDraggedOver(true);
+        expect(block.classList.contains("tahqiq-drag-target")).toBe(true);
+        block.setDraggedOver(false);
+        expect(block.classList.contains("tahqiq-drag-target")).toBe(false);
+    });
+});

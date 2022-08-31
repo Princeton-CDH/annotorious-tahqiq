@@ -90,6 +90,13 @@ describe("Storage instantiation", () => {
 
         expect(clientMock.on).toHaveBeenCalledTimes(3);
     });
+
+    it("Should set annotationCount to 0", () => {
+        // initialize the storage
+        const storage = new AnnotationServerStorage(clientMock, settings);
+
+        expect(storage.annotationCount).toEqual(0);
+    });
 });
 
 describe("Event handlers", () => {
@@ -109,7 +116,7 @@ describe("Event handlers", () => {
                 statusText: "ok",
             },
         );
-        new AnnotationServerStorage(clientMock, settings);
+        const storage = new AnnotationServerStorage(clientMock, settings);
 
         fetchMock.mockResponseOnce(
             JSON.stringify({
@@ -137,6 +144,9 @@ describe("Event handlers", () => {
         };
         // should call addAnnotation on client
         expect(clientMock.addAnnotation).toHaveBeenCalledWith(newAnnotation);
+
+        // should increment annotationCount
+        expect(storage.annotationCount).toEqual(1);
     });
 
     it("should respond to emitted updateAnnotation event with handler", async () => {
@@ -191,7 +201,7 @@ describe("Event handlers", () => {
                 statusText: "ok",
             },
         );
-        new AnnotationServerStorage(clientMock, settings);
+        const storage = new AnnotationServerStorage(clientMock, settings);
 
         fetchMock.mockResponseOnce(JSON.stringify({}), {
             status: 200,
@@ -201,5 +211,7 @@ describe("Event handlers", () => {
         clientMock.emit("deleteAnnotation", fakeAnnotation);
         // should call adapter.delete
         // expect(fetchMock).toHaveBeenCalledWith(fakeAnnotation.id);
+        // should decrement annotationCount
+        expect(storage.annotationCount).toEqual(0);
     });
 });
