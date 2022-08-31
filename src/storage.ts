@@ -13,9 +13,9 @@ const AnnoLoadEvent = new Event("annotations-loaded");
 class AnnotationServerStorage {
     anno;
 
-    settings: Settings;
+    annotationCount: number;
 
-    // TODO: Add a typedef for the Annotorious client (anno)
+    settings: Settings;
 
     /**
      * Instantiate the storage plugin.
@@ -29,6 +29,8 @@ class AnnotationServerStorage {
     ) {
         this.anno = anno;
         this.settings = settings;
+        this.annotationCount = 0;
+
         // bind event handlers
         this.anno.on(
             "createAnnotation",
@@ -54,6 +56,9 @@ class AnnotationServerStorage {
     async loadAnnotations() {
         const annotations: void | SavedAnnotation[] = await this.search(this.settings.target);
         this.anno.setAnnotations(annotations);
+        if (annotations instanceof Array) {
+            this.annotationCount = annotations.length;
+        }
         setTimeout(() => document.dispatchEvent(AnnoLoadEvent), 100);
     }
 
@@ -72,8 +77,12 @@ class AnnotationServerStorage {
         if (this.settings.sourceUri) {
             annotation["dc:source"] = this.settings.sourceUri;
         }
-        console.log("[handleCreateAnnotation] After Annotorious processing:");
-        console.log(annotation);
+
+        // increment annotation count and set position attribute
+        this.setAnnotationCount(this.annotationCount + 1);
+        if (!annotation["schema:position"]) {
+            annotation["schema:position"] = this.annotationCount;
+        }
 
         // wait for adapter to return saved annotation from storage
         const newAnnotation: Annotation = await this.create(
@@ -121,7 +130,17 @@ class AnnotationServerStorage {
      * id property that matches its id property in the store.
      */
     handleDeleteAnnotation(annotation: SavedAnnotation) {
+        this.setAnnotationCount(this.annotationCount - 1);
         this.delete(annotation);
+    }
+
+    /**
+     * Set the annotation count, for use in calculating position
+     *
+     * @param {number} count The new count
+     */
+    setAnnotationCount(count: number) {
+        this.annotationCount = count;
     }
 
     /**
