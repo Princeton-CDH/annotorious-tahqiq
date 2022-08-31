@@ -49,10 +49,10 @@ describe("Element initialization", () => {
         });
         expect(makeEditableSpy).toBeCalledTimes(1);
     });
-    it("Should add click event listener", () => {
+    it("Should add click, drag, drop event listeners", () => {
         const addEventListenerSpy = jest.spyOn(AnnotationBlock.prototype, "addEventListener");
         new AnnotationBlock(props);
-        expect(addEventListenerSpy).toBeCalledTimes(1);
+        expect(addEventListenerSpy).toBeCalledTimes(5);
     });
 });
 

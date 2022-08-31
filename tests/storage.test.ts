@@ -39,6 +39,7 @@ const fakeAnnotation = {
     "@context": "fakeContext",
     body: {},
     motivation: "commenting",
+    "schema:position": 2,
     target: { source: "fakesource" },
     type: "Annotation",
 };
