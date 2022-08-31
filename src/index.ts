@@ -64,9 +64,7 @@ class TranscriptionEditor {
                 extends: "button",
             });
         if (!customElements.get("annotation-block"))
-            customElements.define("annotation-block", AnnotationBlock, {
-                extends: "div",
-            });
+            customElements.define("annotation-block", AnnotationBlock);
 
         // attach event listeners
         document.addEventListener(
@@ -406,7 +404,7 @@ class TranscriptionEditor {
      */
     setAllDraggability(draggable: boolean) {
         this.annotationContainer
-            .querySelectorAll("div")
+            .querySelectorAll("annotation-block")
             .forEach((block) => {
                 if (block instanceof AnnotationBlock) {
                     block.setDraggable(draggable);

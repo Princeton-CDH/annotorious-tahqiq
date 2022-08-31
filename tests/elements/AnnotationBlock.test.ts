@@ -22,9 +22,7 @@ const props = {
 describe("Element initialization", () => {
     beforeAll(() => {
         // register custom element
-        customElements.define("annotation-block", AnnotationBlock, {
-            extends: "div",
-        });
+        customElements.define("annotation-block", AnnotationBlock);
     });
     it("Should set display class", () => {
         const block = new AnnotationBlock(props);

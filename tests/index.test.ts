@@ -1,4 +1,5 @@
-import TranscriptionEditor from "../src";
+import { TranscriptionEditor } from "../src";
+
 
 // Mock the Annotorious client
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,7 +29,7 @@ const storageMock = {
         delete: jest.fn(),
     },
 };
-const container = document.createElement("div");
+const container = document.createElement("annotation-block");
 
 // mock custom elements definition; required to prevent naming conflicts
 const customElementsSpy = jest.spyOn(customElements, "define");

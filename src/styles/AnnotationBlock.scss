@@ -1,5 +1,6 @@
 // Read-only mode annotation block styling
 .tahqiq-block-display {
+    display: block;
     border: 1px solid rgba(128, 128, 128, 0.5);
     margin: 0.5rem;
     padding: 0.5rem;
@@ -15,6 +16,7 @@
 
 // Edit mode annotation block styling
 .tahqiq-block-editor {
+    display: block;
     // Editable label with placeholder
     .tahqiq-label-editor {
         background-color: white;

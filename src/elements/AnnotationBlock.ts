@@ -9,7 +9,7 @@ import "../styles/AnnotationBlock.scss";
  * HTML div element associated with an annotation, which can be made editable to udpate
  * or delete its associated annotation.
  */
-class AnnotationBlock extends HTMLDivElement {
+class AnnotationBlock extends HTMLElement {
     annotation: Annotation;
 
     bodyElement: HTMLDivElement;
@@ -107,7 +107,7 @@ class AnnotationBlock extends HTMLDivElement {
         this.draggable = true;
         this.addEventListener("dragstart", this.startDrag.bind(this));
         this.addEventListener("dragover", (evt) => {
-            evt.preventDefault();
+            evt.preventDefault(); // required to allow drop
             this.onDragOver(this);
         });
         this.addEventListener("dragend", () => this.onDragOver(null));
