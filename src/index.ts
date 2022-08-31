@@ -134,7 +134,7 @@ class TranscriptionEditor {
                     new AnnotationBlock({
                         annotation,
                         editable: false,
-                        onCancel: this.anno.cancelSelected,
+                        onCancel: this.handleCancel.bind(this),
                         onClick: this.handleClickAnnotationBlock.bind(this),
                         onDelete: this.handleDeleteAnnotation.bind(this),
                         onDragOver: this.handleDragOverAnnotationBlock.bind(this),
@@ -156,7 +156,7 @@ class TranscriptionEditor {
             new AnnotationBlock({
                 annotation: selection,
                 editable: true,
-                onCancel: this.anno.cancelSelected,
+                onCancel: this.handleCancel.bind(this),
                 onClick: this.handleClickAnnotationBlock.bind(this),
                 onDelete: this.handleDeleteAnnotation.bind(this),
                 onDragOver: this.handleDragOverAnnotationBlock.bind(this),
@@ -165,6 +165,16 @@ class TranscriptionEditor {
                 updateAnnotorious: this.anno.addAnnotation,
             }),
         );
+    }
+
+    /**
+     * On cancellation, cancel with annotorious and set all draggable
+     */
+    handleCancel() {
+        // cancel with annotorious
+        this.anno.cancelSelected();
+        // make all annotations draggable
+        this.setAllDraggability(true);
     }
 
     /**
@@ -185,6 +195,8 @@ class TranscriptionEditor {
             annotationBlock.makeEditable();
             // set current annotation block
             this.currentAnnotationBlock = <AnnotationBlock>annotationBlock;
+            // ensure no annotation block is draggable
+            this.setAllDraggability(false);
         }
     }
 
@@ -218,13 +230,13 @@ class TranscriptionEditor {
             } else {
                 // remove the highlight zone from the image
                 this.anno.removeAnnotation(annotationBlock.annotation.id);
-                // calling removeAnnotation doesn't fire the deleteAnnotation,
-                // so we have to trigger the deletion explicitly
                 // decrement annotation count
                 this.storage.setAnnotationCount(this.storage.annotationCount - 1);
-                this.storage.delete(annotationBlock.annotation);
                 // remove the edit/display displayBlock
                 annotationBlock.remove();
+                // calling removeAnnotation doesn't fire the deleteAnnotation,
+                // so we have to trigger the deletion explicitly
+                await this.storage.delete(annotationBlock.annotation);
                 // reload positions of all annotation blocks except this one
                 const blocks = this.annotationContainer.querySelectorAll(".tahqiq-block-display");
                 const blockArray = Array.from(blocks).filter((block) => 
@@ -272,6 +284,8 @@ class TranscriptionEditor {
         // update annotation block with new annotation and set inactive
         annotationBlock.setAnnotation(annotation);
         annotationBlock.makeReadOnly();
+        // make all annotations draggable again
+        this.setAllDraggability(true);
     }
 
     /**
@@ -286,6 +300,8 @@ class TranscriptionEditor {
             this.anno.selectAnnotation(annotationBlock.annotation.id);
             // make sure no other annotation blocks are editable
             this.makeAllReadOnlyExcept(annotationBlock);
+            // ensure no annotation block is draggable
+            this.setAllDraggability(false);
         }
     }
 
@@ -342,6 +358,8 @@ class TranscriptionEditor {
      * @param {Element[]} annotationBlocks Array of annotation blocks.
      */
     async reloadPositions(annotationBlocks: Element[]) {
+        // turn off draggability for all blocks while loading
+        this.setAllDraggability(false);
         await Promise.all(annotationBlocks.map(async (block, i) => {
             const position = i + 1;
             if (
@@ -358,7 +376,8 @@ class TranscriptionEditor {
             }
             return Promise.resolve();
         }));
-        // reload all annotations (and rebind event listeners)
+        // reload all annotations (and rebind event listeners, turn draggability
+        // back on)
         return this.storage.loadAnnotations();
     }
 
@@ -376,6 +395,21 @@ class TranscriptionEditor {
                     block !== annotationBlock
                 ) {
                     block.makeReadOnly();
+                }
+            });
+    }
+
+    /**
+     * Set draggability on or off for all blocks.
+     * 
+     * @param {boolean} draggable Whether or not blocks should be draggable.
+     */
+    setAllDraggability(draggable: boolean) {
+        this.annotationContainer
+            .querySelectorAll("div")
+            .forEach((block) => {
+                if (block instanceof AnnotationBlock) {
+                    block.setDraggable(draggable);
                 }
             });
     }

@@ -244,6 +244,16 @@ class AnnotationBlock extends HTMLDivElement {
             this.classList.remove("tahqiq-drag-target");
         }
     }
+
+    /**
+     * Set whether or not this annotation block can be drag and dropped.
+     * Should not be draggable during editing or loading.
+     * 
+     * @param {boolean} draggable Boolean indicating if this block is draggable.
+     */
+    setDraggable(draggable: boolean): void {
+        this.draggable = draggable;
+    }
 }
 
 export { AnnotationBlock };
