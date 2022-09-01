@@ -46,9 +46,9 @@ const clientMock = {
 };
 // Mock the storage plugin
 const storageMock = {
-    adapter: {
-        delete: jest.fn(),
-    },
+    delete: jest.fn(),
+    loadAnnotations: jest.fn(),
+    update: jest.fn(),
 };
 const container = document.createElement("annotation-block");
 
@@ -121,3 +121,6 @@ describe("Drag over annotation", () => {
         });
     });
 });
+
+// TODO: Test handleDropAnnotationBlock once DragEvent is implemented in jsdom
+// https://github.com/jsdom/jsdom/blob/28ed5/test/web-platform-tests/to-run.yaml#L648-L654
