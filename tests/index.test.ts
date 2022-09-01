@@ -5,7 +5,9 @@ import { AnnotationBlock } from "../src/elements/AnnotationBlock";
 const fakeAnnotation = {
     id: "someId",
     "@context": "fakeContext",
-    body: {},
+    body: {
+        value: "fake value",
+    },
     motivation: "commenting",
     "schema:position": 1,
     target: { source: "fakesource" },
@@ -111,3 +113,37 @@ describe("Drag over annotation", () => {
 
 // TODO: Test handleDropAnnotationBlock once DragEvent is implemented in jsdom
 // https://github.com/jsdom/jsdom/blob/28ed5/test/web-platform-tests/to-run.yaml#L648-L654
+
+const fakeAnnotationList = [
+    { ...fakeAnnotation, id: "first", "schema:position": 2 },
+    { ...fakeAnnotation, id: "second" },
+    { ...fakeAnnotation, id: "third", "schema:position": 3 },
+    { ...fakeAnnotation, id: "fourth", "schema:position": null },
+];
+
+describe("Update annotations sequence", () => {
+    it("Should set schema:position on all passed annotations to their list indices", async () => {
+        const updateSpy = jest.spyOn(storageMock, "update");
+        const editor = new TranscriptionEditor(clientMock, storageMock, container);
+        await editor.updateSequence(fakeAnnotationList);
+        // should only be called 3 times, as only 3/4 need to be updated
+        expect(updateSpy).toBeCalledTimes(3);
+        expect(updateSpy).toBeCalledWith({
+            ...fakeAnnotation, id: "first", "schema:position": 1,
+        });
+        expect(updateSpy).toBeCalledWith({
+            ...fakeAnnotation, id: "second", "schema:position": 2,
+        });
+        expect(updateSpy).toBeCalledWith({
+            ...fakeAnnotation, id: "fourth", "schema:position": 4,
+        });
+    });
+    it("Should set all draggability to false and reload all annotations", async () => {
+        const editor = new TranscriptionEditor(clientMock, storageMock, container);
+        const draggabilitySpy = jest.spyOn(editor, "setAllDraggability");
+        storageMock.loadAnnotations.mockClear();
+        await editor.updateSequence(fakeAnnotationList);
+        expect(draggabilitySpy).toBeCalledWith(false);
+        expect(storageMock.loadAnnotations).toBeCalledTimes(1);
+    });
+});
