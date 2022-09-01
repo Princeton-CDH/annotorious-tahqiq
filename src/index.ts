@@ -51,6 +51,9 @@ class TranscriptionEditor {
         this.currentAnnotationBlock = null;
 
         // define custom elements
+
+        // FIXME: "extends" setting does not work on Safari, nor does inheritance
+        // of element types other than HTMLElement. Buttons will not display.
         if (!customElements.get("save-button"))
             customElements.define("save-button", SaveButton, {
                 extends: "button",
