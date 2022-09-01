@@ -215,3 +215,42 @@ describe("Event handlers", () => {
         expect(storage.annotationCount).toEqual(0);
     });
 });
+
+describe("Load annotations", () => {
+    beforeEach(() => {
+        // Reset mocks before each test
+        clientMock.on.mockClear();
+        clientMock.setAnnotations.mockClear();
+        fetchMock.resetMocks();
+    });
+    it("Should sort annotations by schema:position attribute, with nulls at the end", async () => {
+        fetchMock.mockResponse(
+            JSON.stringify([
+                {
+                    ...fakeAnnotation,
+                    "schema:position": null,
+                },
+                fakeAnnotation,
+                {
+                    ...fakeAnnotation,
+                    "schema:position": 1,
+                },
+                {
+                    ...fakeAnnotation,
+                    "schema:position": 3,
+                },
+            ]),
+            {
+                status: 200,
+                statusText: "ok",
+            },
+        );
+        const storage = new AnnotationServerStorage(clientMock, settings);
+        const annotations = await storage.loadAnnotations();
+        if (annotations && annotations.length) {
+            expect(annotations.length).toEqual(4);
+            expect(annotations[0]["schema:position"]).toEqual(1);
+            expect(annotations[3]["schema:position"]).toEqual(null);
+        }
+    });
+});

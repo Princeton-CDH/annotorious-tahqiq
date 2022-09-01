@@ -20,14 +20,14 @@ const clientMock = {
     addAnnotation: jest.fn(),
     removeAnnotation: jest.fn(),
     getAnnotations: jest.fn().mockReturnValue([
-        {
-            ...fakeAnnotation,
-            "schema:position": 3,
-        },
         fakeAnnotation,
         {
             ...fakeAnnotation,
             "schema:position": 2,
+        },
+        {
+            ...fakeAnnotation,
+            "schema:position": 3,
         },
     ]),
     cancelSelected: jest.fn(),
@@ -56,7 +56,7 @@ describe("Plugin instantiation", () => {
     it("Should attach event listeners on initialization", () => {
         const addEventListenerSpy = jest.spyOn(document, "addEventListener");
         new TranscriptionEditor(clientMock, storageMock, container);
-        expect(addEventListenerSpy).toBeCalledTimes(1);
+        expect(addEventListenerSpy).toBeCalledTimes(2);
         // should also attach even listeners to client events
         expect(clientMock.on).toBeCalledTimes(3);
     });
@@ -66,19 +66,6 @@ describe("Plugin instantiation", () => {
         expect(customElements.get("save-button")).toBeDefined();
         expect(customElements.get("delete-button")).toBeDefined();
         expect(customElements.get("cancel-button")).toBeDefined();
-    });
-});
-
-describe("Load annotations", () => {
-    it("Should sort annotations by schema:position attribute", () => {
-        const editor = new TranscriptionEditor(clientMock, storageMock, container);
-        editor.handleAnnotationsLoaded();
-        const blocks = editor.annotationContainer.querySelectorAll("annotation-block");
-        blocks.forEach((block, index) => {
-            if (block instanceof AnnotationBlock) {
-                expect(block.annotation["schema:position"]).toEqual(index + 1);
-            }
-        });
     });
 });
 
