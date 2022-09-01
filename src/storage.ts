@@ -55,11 +55,23 @@ class AnnotationServerStorage {
      */
     async loadAnnotations() {
         const annotations: void | SavedAnnotation[] = await this.search(this.settings.target);
-        this.anno.setAnnotations(annotations);
+
+        // sort by position attribute if present
+        // null position should go to the end; it means dragged from another canvas
+        if (annotations)
+            annotations.sort((a: Annotation, b: Annotation) => {
+                if (a["schema:position"] === null) return 1;
+                if (b["schema:position"] === null) return -1;
+                if (a["schema:position"] && b["schema:position"])
+                    return a["schema:position"] - b["schema:position"];
+                return 0;
+            });
+        await this.anno.setAnnotations(annotations);
         if (annotations instanceof Array) {
             this.annotationCount = annotations.length;
         }
         setTimeout(() => document.dispatchEvent(AnnoLoadEvent), 100);
+        return annotations;
     }
 
     /**

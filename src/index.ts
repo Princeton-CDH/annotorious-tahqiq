@@ -19,6 +19,9 @@ declare global {
     }
 }
 
+// define a custom event to indicate that annotations have been loaded
+const ReloadPositionsEvent = new Event("reload-all-positions");
+
 /**
  * Custom annotation editor for Geniza project
  */
@@ -74,6 +77,10 @@ class TranscriptionEditor {
             "annotations-loaded",
             this.handleAnnotationsLoaded.bind(this),
         );
+        document.addEventListener(
+            "reload-all-positions",
+            this.handleReloadAllPositions.bind(this),
+        );
         this.anno.on("createSelection", this.handleCreateSelection.bind(this));
         this.anno.on(
             "selectAnnotation",
@@ -124,12 +131,6 @@ class TranscriptionEditor {
         // display all current annotations
         this.anno
             .getAnnotations()
-            // sort by position attribute if present on both annotations
-            .sort((a: Annotation, b: Annotation) =>
-                (a["schema:position"] && b["schema:position"])
-                    ? a["schema:position"] - b["schema:position"]
-                    : 0,
-            )
             .forEach((annotation: Annotation) => {
                 this.annotationContainer.append(
                     new AnnotationBlock({
@@ -240,11 +241,12 @@ class TranscriptionEditor {
                 await this.storage.delete(annotationBlock.annotation);
                 // reload positions of all annotation blocks except this one
                 const blocks = this.annotationContainer.querySelectorAll(".tahqiq-block-display");
-                const blockArray = Array.from(blocks).filter((block) => 
-                    block instanceof AnnotationBlock 
-                    && block.annotation.id !== annotationBlock.annotation.id,
-                );
-                await this.reloadPositions(blockArray);
+                const annotations = Array.from(blocks).map((block) => {
+                    if (block instanceof AnnotationBlock 
+                    && block.annotation.id !== annotationBlock.annotation.id)
+                        return block.annotation;
+                });
+                await this.updateSequence(annotations);
             }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
@@ -335,45 +337,77 @@ class TranscriptionEditor {
      */
     async handleDropAnnotationBlock(evt: DragEvent) {
         evt.preventDefault();
-        const blocks = this.annotationContainer.querySelectorAll(".tahqiq-block-display");
-        const blockArray = Array.from(blocks);
-        const draggedBlockId = evt.dataTransfer?.getData("text");
-        const draggedBlock = blockArray.find((block: Element) =>
-            block instanceof AnnotationBlock &&
-            block.dataset?.annotationId === draggedBlockId,
+        const blocks = this.annotationContainer.querySelectorAll("annotation-block");
+        const annotations = Array.from(blocks).map((block) => {
+            if (block instanceof AnnotationBlock) {
+                return block.annotation;
+            }
+        });
+        const draggedId = evt.dataTransfer?.getData("text");
+        const draggedAnnotation = annotations.find((anno: Annotation | undefined) =>
+            anno?.id === draggedId,
         );
-        if (draggedBlock && evt.currentTarget instanceof AnnotationBlock) {
-            const draggedIndex = blockArray.indexOf(draggedBlock);
-            const droppedIndex = blockArray.indexOf(evt.currentTarget);
+        if (draggedAnnotation && evt.currentTarget instanceof AnnotationBlock) {
+            // dragged block found in current tahqiq instance
+            const draggedIndex = annotations.indexOf(draggedAnnotation);
+            const droppedIndex = annotations.indexOf(evt.currentTarget.annotation);
             // move the dragged block to the correct index
-            blockArray.splice(draggedIndex, 1);
-            blockArray.splice(droppedIndex, 0, draggedBlock);
-            await this.reloadPositions(blockArray);
+            annotations.splice(draggedIndex, 1);
+            annotations.splice(droppedIndex, 0, draggedAnnotation);
+            await this.updateSequence(annotations);
+        } else if (evt.currentTarget instanceof AnnotationBlock) {
+            // dragged block is from another tahqiq instance on the document
+            const draggedBlock = document.querySelector(
+                `[data-annotation-id="${draggedId}"]`,
+            );
+            if (draggedBlock instanceof AnnotationBlock) {
+                // adjust the target of the dragged block to point to this canvas
+                const newAnnotation = {
+                    ...draggedBlock.annotation,
+                    target: {
+                        ...draggedBlock.annotation.target,
+                        source: evt.currentTarget.annotation.target.source,
+                    },
+                    "schema:position": null,
+                };
+                // update the dragged block in storage
+                await this.storage.update(newAnnotation);
+                // recalculate positions in both this and origin tahqiq instances
+                setTimeout(() => document.dispatchEvent(ReloadPositionsEvent), 200);
+            }
         }
     }
 
     /**
-     * Given an array of annotation blocks, set all position properties and
+     * Event handler for the reload-all-positions event: loads all annotations from storage,
+     * then recalculates their positions.
+     */
+    async handleReloadAllPositions() {
+        const annotations = await this.storage.loadAnnotations();
+        await this.updateSequence(annotations);
+    }
+
+    /**
+     * Given an array of annotations, set all position properties and
      * save if changed. Used for annotation reordering and deletion.
      *
-     * @param {Element[]} annotationBlocks Array of annotation blocks.
+     * @param {(Annotation | undefined)[]} annotations Array of annotations.
      */
-    async reloadPositions(annotationBlocks: Element[]) {
+    async updateSequence(annotations: (Annotation | undefined)[]) {
         // turn off draggability for all blocks while loading
         this.setAllDraggability(false);
-        await Promise.all(annotationBlocks.map(async (block, i) => {
+        await Promise.all(annotations.map(async (anno, i) => {
             const position = i + 1;
             if (
-                block instanceof AnnotationBlock &&
-                block.annotation["schema:position"] !== position
+                anno && anno["schema:position"] !== position
             ) {
                 // if position changed, set schema:position and save
-                block.setAnnotation({
-                    ...block.annotation,
+                const newAnnotation = {
+                    ...anno,
                     "schema:position": position,
-                });
+                };
                 // save block
-                await this.storage.update(block.annotation);
+                await this.storage.update(newAnnotation);
             }
             return Promise.resolve();
         }));
