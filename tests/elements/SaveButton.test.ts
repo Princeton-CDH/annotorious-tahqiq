@@ -1,5 +1,6 @@
 import { AnnotationBlock } from "../../src/elements/AnnotationBlock";
 import { SaveButton } from "../../src/elements/SaveButton";
+jest.mock("@ungap/custom-elements");
 
 // Mock annotationBlock
 jest.mock("../../src/elements/AnnotationBlock");
