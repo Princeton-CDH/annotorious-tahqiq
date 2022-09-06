@@ -333,6 +333,9 @@ class TranscriptionEditor {
      * When an annotation block is dropped, set its position and check its neighbors' positions
      * for changes. If any positions changed, save changed annotations.
      *
+     * TODO: Test once DragEvent is implemented in jsdom
+     * https://github.com/jsdom/jsdom/blob/28ed5/test/web-platform-tests/to-run.yaml#L648-L654
+     * 
      * @param {DragEvent} evt The "drop" event that triggered this handler
      */
     async handleDropAnnotationBlock(evt: DragEvent) {

@@ -111,9 +111,6 @@ describe("Drag over annotation", () => {
     });
 });
 
-// TODO: Test handleDropAnnotationBlock once DragEvent is implemented in jsdom
-// https://github.com/jsdom/jsdom/blob/28ed5/test/web-platform-tests/to-run.yaml#L648-L654
-
 const fakeAnnotationList = [
     { ...fakeAnnotation, id: "first", "schema:position": 2 },
     { ...fakeAnnotation, id: "second" },
