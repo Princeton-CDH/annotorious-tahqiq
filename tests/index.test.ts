@@ -144,3 +144,25 @@ describe("Update annotations sequence", () => {
         expect(storageMock.loadAnnotations).toBeCalledTimes(1);
     });
 });
+
+describe("Reload all positions", () => {
+    beforeEach(() => {
+        storageMock.loadAnnotations.mockClear();
+    });
+
+    it("Should retrieve annotations from storage, then run updateSequence", async () => {
+        const editor = new TranscriptionEditor(clientMock, storageMock, container);
+        const loadAnnotationsSpy = jest.spyOn(storageMock, "loadAnnotations");
+        const updateSequenceSpy = jest.spyOn(editor, "updateSequence");
+        const resolvedAnnos = [
+            { ...fakeAnnotation, id: "first", "schema:position": 4 },
+            { ...fakeAnnotation, id: "second", "schema:position": 2 },
+        ];
+        storageMock.loadAnnotations.mockResolvedValueOnce(resolvedAnnos);
+        await editor.handleReloadAllPositions();
+        // called once by handleReloadAllPositions, and once by updateSequence
+        expect(loadAnnotationsSpy).toBeCalledTimes(2);
+        // should reorder the returned annotations
+        expect(updateSequenceSpy).toBeCalledWith(resolvedAnnos);
+    });
+});
