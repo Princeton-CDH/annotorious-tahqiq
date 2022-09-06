@@ -1,4 +1,5 @@
 import { AnnotationBlock } from "./AnnotationBlock";
+import "@ungap/custom-elements";
 
 /**
  * A button that deletes an annotation from both Annotorious display and the annotation store.

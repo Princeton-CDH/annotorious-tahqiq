@@ -59,6 +59,7 @@
         "npm": "8.8.0"
     },
     "dependencies": {
-        "@tinymce/tinymce-webcomponent": "^2.0.0"
+        "@tinymce/tinymce-webcomponent": "^2.0.0",
+        "@ungap/custom-elements": "^1.1.0"
     }
 }

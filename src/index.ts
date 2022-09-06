@@ -6,6 +6,7 @@ import { Annotation } from "./types/Annotation";
 import { Target } from "./types/Target";
 import { Editor } from "@tinymce/tinymce-webcomponent";
 import AnnotationServerStorage from "./storage";
+import "@ungap/custom-elements";
 
 import "./styles/index.scss";
 
