@@ -1,0 +1,12 @@
+.tahqiq-drop-zone {
+    width: 100%;
+    height: 100px;
+    display: block;
+    border: none;
+    &.tahqiq-drag-targetable {
+        border: 1px solid rgba(128, 128, 128, 0.5);
+    }
+    &.tahqiq-drag-target {
+        border: 2px dashed rgba(128, 128, 128, 0.5);
+    }
+}

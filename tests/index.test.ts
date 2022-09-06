@@ -85,32 +85,6 @@ describe("Set annotations draggable", () => {
     });
 });
 
-describe("Drag over annotation", () => {
-    it("Should add drag target class to passed block and remove from all others", () => {
-        const editor = new TranscriptionEditor(clientMock, storageMock, container);
-        editor.handleAnnotationsLoaded();
-        const blocks = editor.annotationContainer.querySelectorAll("annotation-block");
-        const draggedOver = blocks[0];
-        const other = blocks[1];
-        if (draggedOver && draggedOver instanceof AnnotationBlock) {
-            editor.handleDragOverAnnotationBlock(draggedOver);
-            expect(draggedOver.classList.contains("tahqiq-drag-target")).toBe(true);
-            if (other) {
-                expect(other.classList.contains("tahqiq-drag-target")).toBe(false);
-            }
-        }
-    });
-    it("Should remove drag target class from all blocks if null passed", () => {
-        const editor = new TranscriptionEditor(clientMock, storageMock, container);
-        editor.handleAnnotationsLoaded();
-        editor.handleDragOverAnnotationBlock(null);
-        const blocks = editor.annotationContainer.querySelectorAll("annotation-block");
-        blocks.forEach((block) => {
-            expect(block.classList.contains("tahqiq-drag-target")).toBe(false);
-        });
-    });
-});
-
 const fakeAnnotationList = [
     { ...fakeAnnotation, id: "first", "schema:position": 2 },
     { ...fakeAnnotation, id: "second" },

@@ -13,7 +13,7 @@ const props = {
     onCancel: jest.fn(),
     onClick: jest.fn(),
     onDelete: jest.fn(),
-    onDragOver: jest.fn(),
+    onDrag: jest.fn(),
     onReorder: jest.fn(),
     onSave: jest.fn(),
     updateAnnotorious: jest.fn(),
@@ -50,7 +50,7 @@ describe("Element initialization", () => {
     it("Should add click, drag, drop event listeners", () => {
         const addEventListenerSpy = jest.spyOn(AnnotationBlock.prototype, "addEventListener");
         new AnnotationBlock(props);
-        expect(addEventListenerSpy).toBeCalledTimes(5);
+        expect(addEventListenerSpy).toBeCalledTimes(7);
     });
 });
 

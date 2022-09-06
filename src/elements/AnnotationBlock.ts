@@ -24,7 +24,7 @@ class AnnotationBlock extends HTMLElement {
 
     onDelete: (annotationBlock: AnnotationBlock) => void;
 
-    onDragOver: (annotationBlock: AnnotationBlock | null) => void;
+    onDrag: (start: boolean) => void;
 
     onReorder: (evt: DragEvent) => void;
 
@@ -42,7 +42,7 @@ class AnnotationBlock extends HTMLElement {
      * @param {Function} props.onCancel Cancel annotation handler function.
      * @param {Function} props.onClick Click handler function.
      * @param {Function} props.onDelete Delete annotation handler function.
-     * @param {Function} props.onDragOver Dragover handler function.
+     * @param {Function} props.onDrag Drag start/end handler function.
      * @param {Function} props.onSave Save annotation handler function.
      * @param {Function} props.onReorder Drop event handler function.
      * @param {Function} props.updateAnnotorious Function that updates this annotation in the
@@ -54,7 +54,7 @@ class AnnotationBlock extends HTMLElement {
         onCancel: () => void;
         onClick: (annotationBlock: AnnotationBlock) => void;
         onDelete: (annotationBlock: AnnotationBlock) => void;
-        onDragOver: (annotationBlock: AnnotationBlock | null) => void;
+        onDrag: (start: boolean) => void;
         onReorder: (evt: DragEvent) => void;
         onSave: (annotationBlock: AnnotationBlock) => Promise<void>;
         updateAnnotorious: (annotation: Annotation) => void;
@@ -64,7 +64,7 @@ class AnnotationBlock extends HTMLElement {
         this.onCancel = props.onCancel;
         this.onClick = props.onClick;
         this.onDelete = props.onDelete;
-        this.onDragOver = props.onDragOver;
+        this.onDrag = props.onDrag;
         this.onReorder = props.onReorder;
         this.onSave = props.onSave;
         this.updateAnnotorious = props.updateAnnotorious;
@@ -108,9 +108,18 @@ class AnnotationBlock extends HTMLElement {
         this.addEventListener("dragstart", this.startDrag.bind(this));
         this.addEventListener("dragover", (evt) => {
             evt.preventDefault(); // required to allow drop
-            this.onDragOver(this);
         });
-        this.addEventListener("dragend", () => this.onDragOver(null));
+        this.addEventListener("dragend", () => {
+            this.onDrag(false); // Hide drop zones
+        });
+        this.addEventListener("dragenter", (evt) => {
+            if (evt.currentTarget instanceof AnnotationBlock)
+                this.classList.add("tahqiq-drag-target");
+        });
+        this.addEventListener("dragleave", (evt) => {
+            if (evt.currentTarget instanceof AnnotationBlock)
+                this.classList.remove("tahqiq-drag-target");
+        });
         this.addEventListener("drop", this.onReorder);
 
         // Set editable if needed
@@ -223,13 +232,14 @@ class AnnotationBlock extends HTMLElement {
     }
 
     /**
-     * On drag start, set the drag data to the dragged item's ID
+     * On drag start, set the drag data to the dragged item's ID, and show drop zones.
      *
      * @param {DragEvent} evt The "dragstart" DragEvent
      */
     startDrag(evt: DragEvent) {
         const target = evt.target as AnnotationBlock;
         evt.dataTransfer?.setData("text", target?.dataset?.annotationId || "");
+        this.onDrag(true);
     }
 
     /**

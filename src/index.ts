@@ -7,6 +7,8 @@ import { Target } from "./types/Target";
 import { Editor } from "@tinymce/tinymce-webcomponent";
 import AnnotationServerStorage from "./storage";
 
+import "./styles/index.scss";
+
 declare global {
     /**
      * Exposing new namespace to window, needed to set tinyMCE config
@@ -19,7 +21,7 @@ declare global {
     }
 }
 
-// define a custom event to indicate that annotations have been loaded
+// define a custom event to indicate that annotations should have positions recalculated
 const ReloadPositionsEvent = new Event("reload-all-positions");
 
 /**
@@ -123,29 +125,56 @@ class TranscriptionEditor {
     /**
      * Handler for custom annotations loaded event triggered by storage plugin.
      */
-    handleAnnotationsLoaded() {
-        // remove any existing annotation blocks, in case of update
+    async handleAnnotationsLoaded() {
+        // remove any existing annotation blocks and drop zones, in case of update
         this.annotationContainer
             .querySelectorAll(".tahqiq-block-display")
             .forEach((el) => el.remove());
+        this.annotationContainer.querySelector(".tahqiq-drop-zone")?.remove();
         // display all current annotations
-        this.anno
-            .getAnnotations()
-            .forEach((annotation: Annotation) => {
-                this.annotationContainer.append(
-                    new AnnotationBlock({
-                        annotation,
-                        editable: false,
-                        onCancel: this.handleCancel.bind(this),
-                        onClick: this.handleClickAnnotationBlock.bind(this),
-                        onDelete: this.handleDeleteAnnotation.bind(this),
-                        onDragOver: this.handleDragOverAnnotationBlock.bind(this),
-                        onReorder: this.handleDropAnnotationBlock.bind(this),
-                        onSave: this.handleSaveAnnotation.bind(this),
-                        updateAnnotorious: this.anno.addAnnotation,
-                    }),
-                );
+        const currentAnnotations = await this.anno.getAnnotations();
+        currentAnnotations.forEach((annotation: Annotation) => {
+            this.annotationContainer.append(
+                new AnnotationBlock({
+                    annotation,
+                    editable: false,
+                    onCancel: this.handleCancel.bind(this),
+                    onClick: this.handleClickAnnotationBlock.bind(this),
+                    onDelete: this.handleDeleteAnnotation.bind(this),
+                    onDrag: this.handleDrag.bind(this),
+                    onReorder: this.handleDropAnnotationBlock.bind(this),
+                    onSave: this.handleSaveAnnotation.bind(this),
+                    updateAnnotorious: this.anno.addAnnotation,
+                }),
+            );
+        });
+        // if no annotations returned, append a drop zone here so we can drop annotations
+        // from other canvases onto this one
+        if (!currentAnnotations?.length) {
+            const dropZone = document.createElement("div");
+            dropZone.className = "tahqiq-drop-zone";
+            // add drag and drop event listeners to drop zone
+            dropZone.addEventListener("dragover", (evt) => {
+                evt.preventDefault();
             });
+            dropZone.addEventListener("dragenter", (evt) => {
+                if (evt.currentTarget instanceof HTMLDivElement) {
+                    evt.currentTarget.classList.add("tahqiq-drag-target");
+                }
+            });
+            dropZone.addEventListener("dragleave", (evt) => {
+                if (evt.currentTarget instanceof HTMLDivElement) {
+                    evt.currentTarget.classList.remove("tahqiq-drag-target");
+                }
+            });
+            dropZone.addEventListener("drop", (evt) => {
+                if (evt.currentTarget instanceof HTMLDivElement) {
+                    evt.currentTarget.classList.remove("tahqiq-drag-target");
+                }
+                this.handleDropAnnotationBlock(evt);
+            });
+            this.annotationContainer.append(dropZone);
+        }
     }
 
     /**
@@ -161,7 +190,7 @@ class TranscriptionEditor {
                 onCancel: this.handleCancel.bind(this),
                 onClick: this.handleClickAnnotationBlock.bind(this),
                 onDelete: this.handleDeleteAnnotation.bind(this),
-                onDragOver: this.handleDragOverAnnotationBlock.bind(this),
+                onDrag: this.handleDrag.bind(this),
                 onReorder: this.handleDropAnnotationBlock.bind(this),
                 onSave: this.handleSaveAnnotation.bind(this),
                 updateAnnotorious: this.anno.addAnnotation,
@@ -289,6 +318,8 @@ class TranscriptionEditor {
         annotationBlock.makeReadOnly();
         // make all annotations draggable again
         this.setAllDraggability(true);
+        // remove any drop zones if present
+        this.annotationContainer.querySelector(".tahqiq-drop-zone")?.remove();
     }
 
     /**
@@ -309,24 +340,20 @@ class TranscriptionEditor {
     }
 
     /**
-     * Sets the passed annotation to "dragged over" state, and all others to not dragged over.
+     * On drag start of any annotation, show drop zones as targetable. Do the opposite
+     * on drag end.
      *
-     * @param {AnnotationBlock | null} annotationBlock The annotation block to set dragged over.
-     * If null is passed, will set all annotation blocks to "not dragged over" state.
+     * @param {boolean} start Boolean to indicate whether this is dragstart or dragend
      */
-    handleDragOverAnnotationBlock(annotationBlock: AnnotationBlock | null) {
-        this.annotationContainer
-            .querySelectorAll(".tahqiq-block-display")
-            .forEach((block) => {
-                if (
-                    block instanceof AnnotationBlock &&
-                    block === annotationBlock
-                ) {
-                    block.setDraggedOver(true);
-                } else if (block instanceof AnnotationBlock) {
-                    block.setDraggedOver(false);
-                }
-            });
+    handleDrag(start: boolean) {
+        const dropZones = document.querySelectorAll(".tahqiq-drop-zone");
+        dropZones.forEach((dropZone) => {
+            if (start) {
+                dropZone.classList.add("tahqiq-drag-targetable");
+            } else {
+                dropZone.classList.remove("tahqiq-drag-targetable");
+            }
+        });
     }
 
     /**
@@ -358,7 +385,7 @@ class TranscriptionEditor {
             annotations.splice(draggedIndex, 1);
             annotations.splice(droppedIndex, 0, draggedAnnotation);
             await this.updateSequence(annotations);
-        } else if (evt.currentTarget instanceof AnnotationBlock) {
+        } else {
             // dragged block is from another tahqiq instance on the document
             const draggedBlock = document.querySelector(
                 `[data-annotation-id="${draggedId}"]`,
@@ -369,14 +396,19 @@ class TranscriptionEditor {
                     ...draggedBlock.annotation,
                     target: {
                         ...draggedBlock.annotation.target,
-                        source: evt.currentTarget.annotation.target.source,
+                        source: {
+                            ...this.storage.adjustTargetSource(
+                                draggedBlock.annotation.target.source,
+                            ),
+                            id: this.storage.settings.target,
+                        },
                     },
                     "schema:position": null,
                 };
                 // update the dragged block in storage
                 await this.storage.update(newAnnotation);
                 // recalculate positions in both this and origin tahqiq instances
-                setTimeout(() => document.dispatchEvent(ReloadPositionsEvent), 200);
+                document.dispatchEvent(ReloadPositionsEvent);
             }
         }
     }
