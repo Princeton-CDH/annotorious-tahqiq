@@ -43,16 +43,23 @@ An instance of TinyMCE v5 must also be available on the `window` object. It is r
 
 This plugin exposes the following CSS classes that can be used to style its elements:
 
-- `.tahqiq-block-display`: Container `div` containing an annotation label and body
-- `.tahqiq-block-editor`: Container `div` when in edit mode
-- `.tahqiq-label-display`: `h3` elements for block labels
-- `.tahqiq-label-editor`: Editable `h3` elements for block labels
-- `.tahqiq-body-display`: `div` element displaying the content of an annotation body
-- `.tahqiq-body-editor`: `div` element containing the TinyMCE editor for editing an annotation body
-- `.tahqiq-button`: All buttons (save, delete, cancel)
-- `.tahqiq-save-button`: Save button
-- `.tahqiq-delete-button`: Delete button
-- `.tahqiq-cancel-button`: Cancel button
+- Annotation blocks
+  - `.tahqiq-block-display`: Container `div` containing an annotation label and body
+  - `.tahqiq-block-editor`: Container `div` when in edit mode
+  - `.tahqiq-label-display`: `h3` elements for block labels
+  - `.tahqiq-label-editor`: Editable `h3` elements for block labels
+  - `.tahqiq-body-display`: `div` element displaying the content of an annotation body
+  - `.tahqiq-body-editor`: `div` element containing the TinyMCE editor for editing an annotation body
+- Buttons
+  - `.tahqiq-button`: All buttons (save, delete, cancel)
+  - `.tahqiq-save-button`: Save button
+  - `.tahqiq-delete-button`: Delete button
+  - `.tahqiq-cancel-button`: Cancel button
+- Drag and drop
+  - `.tahqiq-drag-targetable`: Annotation container receives this class when the user begins dragging another annotation (i.e. this annotation container is "targetable")
+  - `.tahqiq-drag-target`: Annotation container receives this class when the user hovers a dragged annotation over it (i.e. this annotation container is "targeted")
+  - `.tahqiq-drop-zone`: When running multiple instances of Tahqiq on the same page, this `div` will appear on an instance that has no annotations when the user begins dragging an annotation from another instance 
+
 
 ## Development
 
