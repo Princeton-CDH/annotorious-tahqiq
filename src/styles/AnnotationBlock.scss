@@ -1,14 +1,39 @@
+// Read-only mode annotation block styling
 .tahqiq-block-display {
+    display: block;
     border: 1px solid rgba(128, 128, 128, 0.5);
     margin: 0.5rem;
     padding: 0.5rem;
+    opacity: 1;
+    transition: opacity 200ms;
+    pointer-events: all;
     &:hover {
         border: 1px solid rgba(128, 128, 128, 1);
         cursor: pointer;
     }
+    // Drag and drop
+    // Dragged over styling
+    &.tahqiq-drag-target {
+        border: 2px dashed rgba(128, 128, 128, 0.5);
+    }
+    // Waiting for network requests after a drop
+    &.tahqiq-loading {
+        opacity: 0.3;
+        pointer-events: none;
+        cursor: default;
+    }
+    // Required to prevent unwanted dragenter and dragleave events from bubbling
+    // via child elements
+    * {
+        pointer-events: none;
+    }
 }
 
+// Edit mode annotation block styling
 .tahqiq-block-editor {
+    display: block;
+    opacity: 1;
+    // Editable label with placeholder
     .tahqiq-label-editor {
         background-color: white;
         color: black;

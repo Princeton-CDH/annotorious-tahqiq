@@ -1,4 +1,5 @@
 import { AnnotationBlock } from "./AnnotationBlock";
+import "@ungap/custom-elements";
 
 /**
  * A button to save a selected annotation to the store.

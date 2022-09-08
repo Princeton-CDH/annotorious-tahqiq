@@ -1,4 +1,5 @@
 import { AnnotationBlock } from "./AnnotationBlock";
+import "@ungap/custom-elements";
 
 /**
  * A button that cancels editing or creating an annotation on click.

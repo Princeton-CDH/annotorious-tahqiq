@@ -13,6 +13,8 @@ const props = {
     onCancel: jest.fn(),
     onClick: jest.fn(),
     onDelete: jest.fn(),
+    onDrag: jest.fn(),
+    onReorder: jest.fn(),
     onSave: jest.fn(),
     updateAnnotorious: jest.fn(),
 };
@@ -20,9 +22,7 @@ const props = {
 describe("Element initialization", () => {
     beforeAll(() => {
         // register custom element
-        customElements.define("annotation-block", AnnotationBlock, {
-            extends: "div",
-        });
+        customElements.define("annotation-block", AnnotationBlock);
     });
     it("Should set display class", () => {
         const block = new AnnotationBlock(props);
@@ -47,10 +47,10 @@ describe("Element initialization", () => {
         });
         expect(makeEditableSpy).toBeCalledTimes(1);
     });
-    it("Should add click event listener", () => {
+    it("Should add click, drag, drop event listeners", () => {
         const addEventListenerSpy = jest.spyOn(AnnotationBlock.prototype, "addEventListener");
         new AnnotationBlock(props);
-        expect(addEventListenerSpy).toBeCalledTimes(1);
+        expect(addEventListenerSpy).toBeCalledTimes(7);
     });
 });
 
@@ -85,5 +85,18 @@ describe("HTML encoding utility", () => {
     it("Should not modify strings without TinyMCE special characters", () => {
         const block = new AnnotationBlock(props);
         expect(block.encodeHTML("!@#?$test")).toBe("!@#?$test");
+    });
+});
+
+describe("Drag event", () => {
+    // TODO: Test "dragstart" and dataTransfer once DragEvent is implemented in jsdom
+    // https://github.com/jsdom/jsdom/blob/28ed5/test/web-platform-tests/to-run.yaml#L648-L654
+
+    it("Adds or removes drag target class when block dragged over", () => {
+        const block = new AnnotationBlock(props);
+        block.setDraggedOver(true);
+        expect(block.classList.contains("tahqiq-drag-target")).toBe(true);
+        block.setDraggedOver(false);
+        expect(block.classList.contains("tahqiq-drag-target")).toBe(false);
     });
 });

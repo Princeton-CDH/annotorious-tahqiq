@@ -11,6 +11,7 @@ interface Annotation {
     "dc:source"?: string;
     id?: string;
     motivation: string;
+    "schema:position"?: number | null;
     target: Target;
     type: string;
 }

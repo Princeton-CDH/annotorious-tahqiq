@@ -34,7 +34,7 @@ const settings = {
 };
 
 // a fake annotation
-const fakeAnnotation = {
+let fakeAnnotation = {
     id: "someId",
     "@context": "fakeContext",
     body: {},
@@ -56,6 +56,14 @@ describe("Storage instantiation", () => {
                 statusText: "ok",
             },
         );
+        fakeAnnotation = {
+            id: "someId",
+            "@context": "fakeContext",
+            body: {},
+            motivation: "commenting",
+            target: { source: "fakesource" },
+            type: "Annotation",
+        };
     });
 
     it("Should dispatch the anno load event", async () => {
@@ -89,6 +97,13 @@ describe("Storage instantiation", () => {
 
         expect(clientMock.on).toHaveBeenCalledTimes(3);
     });
+
+    it("Should set annotationCount to 0", () => {
+        // initialize the storage
+        const storage = new AnnotationServerStorage(clientMock, settings);
+
+        expect(storage.annotationCount).toEqual(0);
+    });
 });
 
 describe("Event handlers", () => {
@@ -97,9 +112,18 @@ describe("Event handlers", () => {
         clientMock.on.mockClear();
         clientMock.emit.mockClear();
         fetchMock.resetMocks();
+        fakeAnnotation = {
+            id: "someId",
+            "@context": "fakeContext",
+            body: {},
+            motivation: "commenting",
+            target: { source: "fakesource" },
+            type: "Annotation",
+        };
     });
 
     it("should respond to emitted createAnnotation event with handler", async () => {
+        const originalAnnotation = { ...fakeAnnotation };
         // initialize the storage
         fetchMock.mockResponseOnce(
             JSON.stringify({ resources: [fakeAnnotation] }),
@@ -108,7 +132,7 @@ describe("Event handlers", () => {
                 statusText: "ok",
             },
         );
-        new AnnotationServerStorage(clientMock, settings);
+        const storage = new AnnotationServerStorage(clientMock, settings);
 
         fetchMock.mockResponseOnce(
             JSON.stringify({
@@ -130,15 +154,20 @@ describe("Event handlers", () => {
         });
         // should get new id from server
         const newAnnotation = {
-            ...fakeAnnotation,
+            ...originalAnnotation,
+            "dc:source": "https://fakesource.uri",
             id: "assignedId",
             target: { source: "fakesource" },
         };
         // should call addAnnotation on client
         expect(clientMock.addAnnotation).toHaveBeenCalledWith(newAnnotation);
+
+        // should increment annotationCount
+        expect(storage.annotationCount).toEqual(1);
     });
 
     it("should respond to emitted updateAnnotation event with handler", async () => {
+        const originalAnnotation = { ...fakeAnnotation };
         // initialize the storage
         fetchMock.mockResponseOnce(
             JSON.stringify({ resources: [fakeAnnotation] }),
@@ -171,14 +200,15 @@ describe("Event handlers", () => {
                 statusText: "ok",
             },
         );
-        const newAnnotation2 = {
-            ...fakeAnnotation,
+        const newAnnotation = {
+            ...originalAnnotation,
+            "dc:source": "https://fakesource.uri",
             id: "assignedId",
             target: { source: "fakesource" },
         };
         clientMock.emit("updateAnnotation", annotation, previous);
         // should call addAnnotation on client
-        expect(clientMock.addAnnotation).toHaveBeenCalledWith(newAnnotation2);
+        expect(clientMock.addAnnotation).toHaveBeenCalledWith(newAnnotation);
     });
 
     it("should respond to emitted deleteAnnotation event with handler", async () => {
@@ -190,7 +220,7 @@ describe("Event handlers", () => {
                 statusText: "ok",
             },
         );
-        new AnnotationServerStorage(clientMock, settings);
+        const storage = new AnnotationServerStorage(clientMock, settings);
 
         fetchMock.mockResponseOnce(JSON.stringify({}), {
             status: 200,
@@ -200,5 +230,65 @@ describe("Event handlers", () => {
         clientMock.emit("deleteAnnotation", fakeAnnotation);
         // should call adapter.delete
         // expect(fetchMock).toHaveBeenCalledWith(fakeAnnotation.id);
+        // should decrement annotationCount
+        expect(storage.annotationCount).toEqual(0);
+    });
+});
+
+describe("Load annotations", () => {
+    beforeEach(() => {
+        // Reset mocks before each test
+        clientMock.on.mockClear();
+        clientMock.setAnnotations.mockClear();
+        fetchMock.resetMocks();
+        fakeAnnotation = {
+            id: "someId",
+            "@context": "fakeContext",
+            body: {},
+            motivation: "commenting",
+            target: { source: "fakesource" },
+            type: "Annotation",
+        };
+    });
+    it("Should sort annotations by schema:position attribute, with nulls at the end", async () => {
+        fetchMock.mockResponse(
+            JSON.stringify([
+                {
+                    ...fakeAnnotation,
+                    "schema:position": null,
+                },
+                {
+                    ...fakeAnnotation,
+                    "schema:position": 2,
+                },
+                {
+                    ...fakeAnnotation,
+                    "schema:position": 1,
+                },
+                {
+                    ...fakeAnnotation,
+                    "schema:position": 3,
+                },
+                {
+                    ...fakeAnnotation,
+                    "schema:position": 30,
+                },
+                {
+                    ...fakeAnnotation,
+                    "schema:position": undefined,
+                },
+            ]),
+            {
+                status: 200,
+                statusText: "ok",
+            },
+        );
+        const storage = new AnnotationServerStorage(clientMock, settings);
+        const annotations = await storage.loadAnnotations();
+        if (annotations && annotations.length) {
+            expect(annotations.length).toEqual(6);
+            expect(annotations[0]["schema:position"]).toEqual(1);
+            expect(annotations[5]["schema:position"]).toEqual(null);
+        }
     });
 });

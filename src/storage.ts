@@ -13,9 +13,9 @@ const AnnoLoadEvent = new Event("annotations-loaded");
 class AnnotationServerStorage {
     anno;
 
-    settings: Settings;
+    annotationCount: number;
 
-    // TODO: Add a typedef for the Annotorious client (anno)
+    settings: Settings;
 
     /**
      * Instantiate the storage plugin.
@@ -29,6 +29,8 @@ class AnnotationServerStorage {
     ) {
         this.anno = anno;
         this.settings = settings;
+        this.annotationCount = 0;
+
         // bind event handlers
         this.anno.on(
             "createAnnotation",
@@ -53,8 +55,23 @@ class AnnotationServerStorage {
      */
     async loadAnnotations() {
         const annotations: void | SavedAnnotation[] = await this.search(this.settings.target);
-        this.anno.setAnnotations(annotations);
+
+        // sort by position attribute if present
+        // null position should go to the end; it means dragged from another canvas
+        if (annotations)
+            annotations.sort((a: Annotation, b: Annotation) => {
+                if (a["schema:position"] === null) return 1;
+                if (b["schema:position"] === null) return -1;
+                if (a["schema:position"] && b["schema:position"])
+                    return a["schema:position"] - b["schema:position"];
+                return 0;
+            });
+        await this.anno.setAnnotations(annotations);
+        if (annotations instanceof Array) {
+            this.annotationCount = annotations.length;
+        }
         setTimeout(() => document.dispatchEvent(AnnoLoadEvent), 100);
+        return annotations;
     }
 
     /**
@@ -71,6 +88,12 @@ class AnnotationServerStorage {
         // save source URI to dc:source attribute on annotation
         if (this.settings.sourceUri) {
             annotation["dc:source"] = this.settings.sourceUri;
+        }
+
+        // increment annotation count and set position attribute
+        this.setAnnotationCount(this.annotationCount + 1);
+        if (!annotation["schema:position"]) {
+            annotation["schema:position"] = this.annotationCount;
         }
 
         // wait for adapter to return saved annotation from storage
@@ -119,7 +142,17 @@ class AnnotationServerStorage {
      * id property that matches its id property in the store.
      */
     handleDeleteAnnotation(annotation: SavedAnnotation) {
+        this.setAnnotationCount(this.annotationCount - 1);
         this.delete(annotation);
+    }
+
+    /**
+     * Set the annotation count, for use in calculating position
+     *
+     * @param {number} count The new count
+     */
+    setAnnotationCount(count: number) {
+        this.annotationCount = count;
     }
 
     /**

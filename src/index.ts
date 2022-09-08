@@ -6,6 +6,9 @@ import { Annotation } from "./types/Annotation";
 import { Target } from "./types/Target";
 import { Editor } from "@tinymce/tinymce-webcomponent";
 import AnnotationServerStorage from "./storage";
+import "@ungap/custom-elements";
+
+import "./styles/index.scss";
 
 declare global {
     /**
@@ -18,6 +21,9 @@ declare global {
         tinymce: any;
     }
 }
+
+// define a custom event to indicate that annotations should have positions recalculated
+const ReloadPositionsEvent = new Event("reload-all-positions");
 
 /**
  * Custom annotation editor for Geniza project
@@ -51,6 +57,9 @@ class TranscriptionEditor {
         this.currentAnnotationBlock = null;
 
         // define custom elements
+
+        // FIXME: "extends" setting does not work on Safari, nor does inheritance
+        // of element types other than HTMLElement. Buttons will not display.
         if (!customElements.get("save-button"))
             customElements.define("save-button", SaveButton, {
                 extends: "button",
@@ -64,14 +73,16 @@ class TranscriptionEditor {
                 extends: "button",
             });
         if (!customElements.get("annotation-block"))
-            customElements.define("annotation-block", AnnotationBlock, {
-                extends: "div",
-            });
+            customElements.define("annotation-block", AnnotationBlock);
 
         // attach event listeners
         document.addEventListener(
             "annotations-loaded",
             this.handleAnnotationsLoaded.bind(this),
+        );
+        document.addEventListener(
+            "reload-all-positions",
+            this.handleReloadAllPositions.bind(this),
         );
         this.anno.on("createSelection", this.handleCreateSelection.bind(this));
         this.anno.on(
@@ -115,25 +126,56 @@ class TranscriptionEditor {
     /**
      * Handler for custom annotations loaded event triggered by storage plugin.
      */
-    handleAnnotationsLoaded() {
-        // remove any existing annotation blocks, in case of update
+    async handleAnnotationsLoaded() {
+        // remove any existing annotation blocks and drop zones, in case of update
         this.annotationContainer
             .querySelectorAll(".tahqiq-block-display")
             .forEach((el) => el.remove());
+        this.annotationContainer.querySelector(".tahqiq-drop-zone")?.remove();
         // display all current annotations
-        this.anno.getAnnotations().forEach((annotation: Annotation) => {
+        const currentAnnotations = await this.anno.getAnnotations();
+        currentAnnotations.forEach((annotation: Annotation) => {
             this.annotationContainer.append(
                 new AnnotationBlock({
                     annotation,
                     editable: false,
-                    onCancel: this.anno.cancelSelected,
+                    onCancel: this.handleCancel.bind(this),
                     onClick: this.handleClickAnnotationBlock.bind(this),
                     onDelete: this.handleDeleteAnnotation.bind(this),
+                    onDrag: this.handleDrag.bind(this),
+                    onReorder: this.handleDropAnnotationBlock.bind(this),
                     onSave: this.handleSaveAnnotation.bind(this),
                     updateAnnotorious: this.anno.addAnnotation,
                 }),
             );
         });
+        // if no annotations returned, append a drop zone here so we can drop annotations
+        // from other canvases onto this one
+        if (!currentAnnotations?.length) {
+            const dropZone = document.createElement("div");
+            dropZone.className = "tahqiq-drop-zone";
+            // add drag and drop event listeners to drop zone
+            dropZone.addEventListener("dragover", (evt) => {
+                evt.preventDefault();
+            });
+            dropZone.addEventListener("dragenter", (evt) => {
+                if (evt.currentTarget instanceof HTMLDivElement) {
+                    evt.currentTarget.classList.add("tahqiq-drag-target");
+                }
+            });
+            dropZone.addEventListener("dragleave", (evt) => {
+                if (evt.currentTarget instanceof HTMLDivElement) {
+                    evt.currentTarget.classList.remove("tahqiq-drag-target");
+                }
+            });
+            dropZone.addEventListener("drop", (evt) => {
+                if (evt.currentTarget instanceof HTMLDivElement) {
+                    evt.currentTarget.classList.remove("tahqiq-drag-target");
+                }
+                this.handleDropAnnotationBlock(evt);
+            });
+            this.annotationContainer.append(dropZone);
+        }
     }
 
     /**
@@ -146,13 +188,25 @@ class TranscriptionEditor {
             new AnnotationBlock({
                 annotation: selection,
                 editable: true,
-                onCancel: this.anno.cancelSelected,
+                onCancel: this.handleCancel.bind(this),
                 onClick: this.handleClickAnnotationBlock.bind(this),
                 onDelete: this.handleDeleteAnnotation.bind(this),
+                onDrag: this.handleDrag.bind(this),
+                onReorder: this.handleDropAnnotationBlock.bind(this),
                 onSave: this.handleSaveAnnotation.bind(this),
                 updateAnnotorious: this.anno.addAnnotation,
             }),
         );
+    }
+
+    /**
+     * On cancellation, cancel with annotorious and set all draggable
+     */
+    handleCancel() {
+        // cancel with annotorious
+        this.anno.cancelSelected();
+        // make all annotations draggable
+        this.setAllDraggability(true);
     }
 
     /**
@@ -173,6 +227,8 @@ class TranscriptionEditor {
             annotationBlock.makeEditable();
             // set current annotation block
             this.currentAnnotationBlock = <AnnotationBlock>annotationBlock;
+            // ensure no annotation block is draggable
+            this.setAllDraggability(false);
         }
     }
 
@@ -196,7 +252,7 @@ class TranscriptionEditor {
      *
      * @param {string} annotationBlock Annotation block associated with the annotation to delete.
      */
-    handleDeleteAnnotation(annotationBlock: AnnotationBlock) {
+    async handleDeleteAnnotation(annotationBlock: AnnotationBlock) {
         try {
             if (!annotationBlock.annotation.id) {
                 // TODO: Better error handling
@@ -206,11 +262,21 @@ class TranscriptionEditor {
             } else {
                 // remove the highlight zone from the image
                 this.anno.removeAnnotation(annotationBlock.annotation.id);
-                // calling removeAnnotation doesn't fire the deleteAnnotation,
-                // so we have to trigger the deletion explicitly
-                this.storage.delete(annotationBlock.annotation);
+                // decrement annotation count
+                this.storage.setAnnotationCount(this.storage.annotationCount - 1);
                 // remove the edit/display displayBlock
                 annotationBlock.remove();
+                // calling removeAnnotation doesn't fire the deleteAnnotation,
+                // so we have to trigger the deletion explicitly
+                await this.storage.delete(annotationBlock.annotation);
+                // reload positions of all annotation blocks except this one
+                const blocks = this.annotationContainer.querySelectorAll(".tahqiq-block-display");
+                const annotations = Array.from(blocks).map((block) => {
+                    if (block instanceof AnnotationBlock 
+                    && block.annotation.id !== annotationBlock.annotation.id)
+                        return block.annotation;
+                });
+                await this.updateSequence(annotations);
             }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
@@ -240,8 +306,7 @@ class TranscriptionEditor {
             });
         } else if (Array.isArray(annotation.body)) {
             // assume text content is first body element
-            annotation.body[0].value =
-                editorContent || "";
+            annotation.body[0].value = editorContent || "";
             if (annotationBlock.labelElement.textContent) {
                 annotation.body[0].label = annotationBlock.labelElement.textContent;
             }
@@ -252,6 +317,10 @@ class TranscriptionEditor {
         // update annotation block with new annotation and set inactive
         annotationBlock.setAnnotation(annotation);
         annotationBlock.makeReadOnly();
+        // make all annotations draggable again
+        this.setAllDraggability(true);
+        // remove any drop zones if present
+        this.annotationContainer.querySelector(".tahqiq-drop-zone")?.remove();
     }
 
     /**
@@ -266,7 +335,129 @@ class TranscriptionEditor {
             this.anno.selectAnnotation(annotationBlock.annotation.id);
             // make sure no other annotation blocks are editable
             this.makeAllReadOnlyExcept(annotationBlock);
+            // ensure no annotation block is draggable
+            this.setAllDraggability(false);
         }
+    }
+
+    /**
+     * On drag start of any annotation, show drop zones as targetable. Do the opposite
+     * on drag end.
+     *
+     * @param {boolean} start Boolean to indicate whether this is dragstart or dragend
+     */
+    handleDrag(start: boolean) {
+        const dropZones = document.querySelectorAll(".tahqiq-drop-zone");
+        dropZones.forEach((dropZone) => {
+            if (start) {
+                dropZone.classList.add("tahqiq-drag-targetable");
+            } else {
+                dropZone.classList.remove("tahqiq-drag-targetable");
+            }
+        });
+    }
+
+    /**
+     * When an annotation block is dropped, set its position and check its neighbors' positions
+     * for changes. If any positions changed, save changed annotations.
+     *
+     * TODO: Test once DragEvent is implemented in jsdom
+     * https://github.com/jsdom/jsdom/blob/28ed5/test/web-platform-tests/to-run.yaml#L648-L654
+     * 
+     * @param {DragEvent} evt The "drop" event that triggered this handler
+     */
+    async handleDropAnnotationBlock(evt: DragEvent) {
+        evt.preventDefault();
+        // set loading style to prepare for network requests
+        this.annotationContainer
+            .querySelectorAll("annotation-block")
+            .forEach((block) => {
+                if (block instanceof AnnotationBlock) {
+                    block.classList.add("tahqiq-loading");
+                }
+            });
+        const blocks = this.annotationContainer.querySelectorAll("annotation-block");
+        const annotations = Array.from(blocks).map((block) => {
+            if (block instanceof AnnotationBlock) {
+                return block.annotation;
+            }
+        });
+        const draggedId = evt.dataTransfer?.getData("text");
+        const draggedAnnotation = annotations.find((anno: Annotation | undefined) =>
+            anno?.id === draggedId,
+        );
+        if (draggedAnnotation && evt.currentTarget instanceof AnnotationBlock) {
+            // dragged block found in current tahqiq instance
+            const draggedIndex = annotations.indexOf(draggedAnnotation);
+            const droppedIndex = annotations.indexOf(evt.currentTarget.annotation);
+            // move the dragged block to the correct index
+            annotations.splice(draggedIndex, 1);
+            annotations.splice(droppedIndex, 0, draggedAnnotation);
+            await this.updateSequence(annotations);
+        } else {
+            // dragged block is from another tahqiq instance on the document
+            const draggedBlock = document.querySelector(
+                `[data-annotation-id="${draggedId}"]`,
+            );
+            if (draggedBlock instanceof AnnotationBlock) {
+                // adjust the target of the dragged block to point to this canvas
+                const newAnnotation = {
+                    ...draggedBlock.annotation,
+                    target: {
+                        ...draggedBlock.annotation.target,
+                        source: {
+                            ...this.storage.adjustTargetSource(
+                                draggedBlock.annotation.target.source,
+                            ),
+                            id: this.storage.settings.target,
+                        },
+                    },
+                    "schema:position": null,
+                };
+                // update the dragged block in storage
+                await this.storage.update(newAnnotation);
+                // recalculate positions in both this and origin tahqiq instances
+                document.dispatchEvent(ReloadPositionsEvent);
+            }
+        }
+    }
+
+    /**
+     * Event handler for the reload-all-positions event: loads all annotations from storage,
+     * then recalculates their positions.
+     */
+    async handleReloadAllPositions() {
+        const annotations = await this.storage.loadAnnotations();
+        await this.updateSequence(annotations);
+    }
+
+    /**
+     * Given an array of annotations, set all position properties and
+     * save if changed. Used for annotation reordering and deletion.
+     *
+     * @param {(Annotation | undefined)[]} annotations Array of annotations.
+     */
+    async updateSequence(annotations: (Annotation | undefined)[]) {
+        // turn off draggability for all blocks while loading
+        this.setAllDraggability(false);
+        await Promise.all(annotations.map(async (anno, i) => {
+            const position = i + 1;
+            if (
+                anno && anno["schema:position"] !== position
+            ) {
+                // if position changed, set schema:position and save
+                const newAnnotation = {
+                    ...anno,
+                    "schema:position": position,
+                };
+                // save block
+                await this.storage.update(newAnnotation);
+            }
+            return Promise.resolve();
+        }));
+        // reload all annotations (and rebind event listeners, turn draggability
+        // back on)
+        return this.storage.loadAnnotations();
     }
 
     /**
@@ -283,6 +474,21 @@ class TranscriptionEditor {
                     block !== annotationBlock
                 ) {
                     block.makeReadOnly();
+                }
+            });
+    }
+
+    /**
+     * Set draggability on or off for all blocks.
+     * 
+     * @param {boolean} draggable Whether or not blocks should be draggable.
+     */
+    setAllDraggability(draggable: boolean) {
+        this.annotationContainer
+            .querySelectorAll("annotation-block")
+            .forEach((block) => {
+                if (block instanceof AnnotationBlock) {
+                    block.setDraggable(draggable);
                 }
             });
     }
