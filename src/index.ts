@@ -368,6 +368,14 @@ class TranscriptionEditor {
      */
     async handleDropAnnotationBlock(evt: DragEvent) {
         evt.preventDefault();
+        // set loading style to prepare for network requests
+        this.annotationContainer
+            .querySelectorAll("annotation-block")
+            .forEach((block) => {
+                if (block instanceof AnnotationBlock) {
+                    block.classList.add("tahqiq-loading");
+                }
+            });
         const blocks = this.annotationContainer.querySelectorAll("annotation-block");
         const annotations = Array.from(blocks).map((block) => {
             if (block instanceof AnnotationBlock) {

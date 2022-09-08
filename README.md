@@ -59,7 +59,7 @@ This plugin exposes the following CSS classes that can be used to style its elem
   - `.tahqiq-drag-targetable`: Annotation container receives this class when the user begins dragging another annotation (i.e. this annotation container is "targetable")
   - `.tahqiq-drag-target`: Annotation container receives this class when the user hovers a dragged annotation over it (i.e. this annotation container is "targeted")
   - `.tahqiq-drop-zone`: When running multiple instances of Tahqiq on the same page, this `div` will appear on an instance that has no annotations when the user begins dragging an annotation from another instance 
-
+  - `.tahqiq-loading`: To compensate for network request timing, this class is added to all annotation containers after a drag and drop is completed, and removed when the network requests are finished
 
 ## Development
 
