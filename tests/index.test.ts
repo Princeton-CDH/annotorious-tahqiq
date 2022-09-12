@@ -57,13 +57,13 @@ const container = document.createElement("annotation-block");
 describe("Plugin instantiation", () => {
     it("Should attach event listeners on initialization", () => {
         const addEventListenerSpy = jest.spyOn(document, "addEventListener");
-        new TranscriptionEditor(clientMock, storageMock, container);
+        new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
         expect(addEventListenerSpy).toBeCalledTimes(2);
         // should also attach even listeners to client events
         expect(clientMock.on).toBeCalledTimes(3);
     });
     it("Should define custom elements on initialization", () => {
-        new TranscriptionEditor(clientMock, storageMock, container);
+        new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
         expect(customElements.get("annotation-block")).toBeDefined();
         expect(customElements.get("save-button")).toBeDefined();
         expect(customElements.get("delete-button")).toBeDefined();
@@ -73,7 +73,9 @@ describe("Plugin instantiation", () => {
 
 describe("Set annotations draggable", () => {
     it("Should change the draggable property on all annotation blocks", () => {
-        const editor = new TranscriptionEditor(clientMock, storageMock, container);
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
         editor.handleAnnotationsLoaded();
         editor.setAllDraggability(false);
         const blocks = editor.annotationContainer.querySelectorAll("annotation-block");
@@ -95,7 +97,9 @@ const fakeAnnotationList = [
 describe("Update annotations sequence", () => {
     it("Should set schema:position on all passed annotations to their list indices", async () => {
         const updateSpy = jest.spyOn(storageMock, "update");
-        const editor = new TranscriptionEditor(clientMock, storageMock, container);
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
         await editor.updateSequence(fakeAnnotationList);
         // should only be called 3 times, as only 3/4 need to be updated
         expect(updateSpy).toBeCalledTimes(3);
@@ -110,7 +114,9 @@ describe("Update annotations sequence", () => {
         });
     });
     it("Should set all draggability to false and reload all annotations", async () => {
-        const editor = new TranscriptionEditor(clientMock, storageMock, container);
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
         const draggabilitySpy = jest.spyOn(editor, "setAllDraggability");
         storageMock.loadAnnotations.mockClear();
         await editor.updateSequence(fakeAnnotationList);
@@ -125,7 +131,9 @@ describe("Reload all positions", () => {
     });
 
     it("Should retrieve annotations from storage, then run updateSequence", async () => {
-        const editor = new TranscriptionEditor(clientMock, storageMock, container);
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
         const loadAnnotationsSpy = jest.spyOn(storageMock, "loadAnnotations");
         const updateSequenceSpy = jest.spyOn(editor, "updateSequence");
         const resolvedAnnos = [

@@ -19,6 +19,7 @@ declare global {
         tinyConfig: any;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tinymce: any;
+        tinyApiKey: string;
     }
 }
 
@@ -46,9 +47,10 @@ class TranscriptionEditor {
      * @param {any} storage Storage plugin to save Annotorious annotations.
      * @param {HTMLElement} annotationContainer Existing HTML element that the editor will be
      * placed into.
+     * @param {string} tinyApiKey API key for the TinyMCE rich text editor.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    constructor(anno: any, storage: any, annotationContainer: HTMLElement) {
+    constructor(anno: any, storage: any, annotationContainer: HTMLElement, tinyApiKey: string) {
         this.anno = anno;
         this.storage = storage;
         // disable the default annotorious editor (headless mode)
@@ -120,6 +122,9 @@ class TranscriptionEditor {
                 li { padding-right: 1em; } ins { color: gray; }",
                 menubar: {}, // disable menu bar
             };
+        }
+        if (!window.tinyApiKey) {
+            window.tinyApiKey = tinyApiKey;
         }
     }
 
