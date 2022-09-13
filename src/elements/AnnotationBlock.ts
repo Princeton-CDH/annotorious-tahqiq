@@ -166,6 +166,7 @@ class AnnotationBlock extends HTMLElement {
         window.tinyConfig.init_instance_callback = this.setEditorId.bind(this);
         const editor = document.createElement("tinymce-editor");
         editor.setAttribute("config", "tinyConfig");
+        editor.setAttribute("api-key", window.tinyApiKey);
         editor.innerHTML = this.encodeHTML(this.bodyElement.innerHTML);
         this.bodyElement.setAttribute("class", "tahqiq-body-editor");
         this.bodyElement.innerHTML = "";
