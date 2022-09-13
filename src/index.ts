@@ -118,7 +118,7 @@ class TranscriptionEditor {
                     { title: "Arabic", code: "ar" },
                 ],
                 content_style:
-                    "::marker {direction: ltr; margin-left: 1em; }\
+                    "::marker { margin-left: 1em; }\
                 li { padding-right: 1em; } ins { color: gray; }",
                 menubar: false, // disable menu bar
             };
