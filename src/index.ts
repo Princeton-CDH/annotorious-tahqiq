@@ -50,7 +50,7 @@ class TranscriptionEditor {
      * @param {string} tinyApiKey API key for the TinyMCE rich text editor.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    constructor(anno: any, storage: any, annotationContainer: HTMLElement, tinyApiKey: string) {
+    constructor(anno: any, storage: any, annotationContainer: HTMLElement, tinyApiKey?: string) {
         this.anno = anno;
         this.storage = storage;
         // disable the default annotorious editor (headless mode)
@@ -124,7 +124,7 @@ class TranscriptionEditor {
             };
         }
         if (!window.tinyApiKey) {
-            window.tinyApiKey = tinyApiKey;
+            window.tinyApiKey = tinyApiKey || "no-api-key";
         }
     }
 

@@ -29,7 +29,7 @@ Then, to use alongside Annotorious and a storage plugin:
 const client = Annotorious(annotoriousSettings);
 const storagePlugin = StoragePlugin(); // An Annotorious plugin for storing annotations
 const annotationContainer = document.getElementById("annotation"); // An empty HTML element that the editor will be placed into.
-const tinyApiKey = "1234567890"; // Your TinyMCE editor API key.
+const tinyApiKey = "1234567890"; // Your TinyMCE editor API key (optional, can be omitted for testing purposes).
 new TranscriptionEditor(client, storagePlugin, annotationContainer, tinyApiKey);
 ```
 
