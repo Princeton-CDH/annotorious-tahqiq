@@ -139,6 +139,16 @@ class TranscriptionEditor {
         this.annotationContainer.querySelector(".tahqiq-drop-zone")?.remove();
         // display all current annotations
         const currentAnnotations = await this.anno.getAnnotations();
+        // sort by position attribute if present (sometimes annotorious returns these out of order)
+        if (currentAnnotations)
+            currentAnnotations.sort((a: Annotation, b: Annotation) => {
+                // null position should go to the end; it means dragged from another canvas
+                if (a["schema:position"] === null) return 1;
+                if (b["schema:position"] === null) return -1;
+                if (a["schema:position"] && b["schema:position"])
+                    return a["schema:position"] - b["schema:position"];
+                return 0;
+            });
         currentAnnotations.forEach((annotation: Annotation) => {
             this.annotationContainer.append(
                 new AnnotationBlock({
@@ -316,12 +326,13 @@ class TranscriptionEditor {
                 annotation.body[0].label = annotationBlock.labelElement.textContent;
             }
         }
-        // update with annotorious, then save to storage backend
-        await this.anno.updateSelected(annotation);
-        this.anno.saveSelected();
+        // update with annotorious and save to storage backend
+        await this.anno.updateSelected(annotation, true);
         // update annotation block with new annotation and set inactive
         annotationBlock.setAnnotation(annotation);
         annotationBlock.makeReadOnly();
+        // reload annotations from storage (for post-save effects e.g. html sanitization)
+        await this.storage.loadAnnotations();
         // make all annotations draggable again
         this.setAllDraggability(true);
         // remove any drop zones if present
