@@ -308,10 +308,6 @@ class TranscriptionEditor {
     async handleSaveAnnotation(annotationBlock: AnnotationBlock) {
         const annotation = annotationBlock.annotation;
         const editorContent = window.tinymce.get(annotationBlock.editorId).getContent();
-        // add primary and secondary (if applicable) motivation to the annotation
-        annotation.motivation = this.storage.settings.secondaryMotivation
-            ? ["sc:supplementing", this.storage.settings.secondaryMotivation]
-            : "sc:supplementing";
         // add the content to the annotation
         if (Array.isArray(annotation.body) && annotation.body.length == 0) {
             annotation.body.push({
