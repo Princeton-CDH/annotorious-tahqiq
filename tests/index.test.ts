@@ -60,7 +60,7 @@ describe("Plugin instantiation", () => {
         new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
         expect(addEventListenerSpy).toBeCalledTimes(2);
         // should also attach even listeners to client events
-        expect(clientMock.on).toBeCalledTimes(3);
+        expect(clientMock.on).toBeCalledTimes(4);
     });
     it("Should define custom elements on initialization", () => {
         new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
