@@ -6,6 +6,7 @@ interface Settings {
     target: string;
     manifest: string;
     csrf_token: string;
+    secondaryMotivation?: string;
     sourceUri?: string;
 }
 

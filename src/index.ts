@@ -308,17 +308,22 @@ class TranscriptionEditor {
     async handleSaveAnnotation(annotationBlock: AnnotationBlock) {
         const annotation = annotationBlock.annotation;
         const editorContent = window.tinymce.get(annotationBlock.editorId).getContent();
+        // add primary and secondary (if applicable) motivation to the annotation
+        annotation.motivation = this.storage.settings.secondaryMotivation
+            ? ["sc:supplementing", this.storage.settings.secondaryMotivation]
+            : "sc:supplementing";
         // add the content to the annotation
-        annotation.motivation = "supplementing";
         if (Array.isArray(annotation.body) && annotation.body.length == 0) {
             annotation.body.push({
                 type: "TextualBody",
-                purpose: "transcribing",
                 value: editorContent || "",
                 format: "text/html",
                 label: annotationBlock.labelElement.textContent || undefined,
-                // TODO: transcription motivation, language, etc.
+                // purpose: "transcribing",
+                // - purpose on body is only needed if more than one body
+                //   (e.g., transcription + tags in the same annotation)
             });
+            // TODO: transcription language, etc.
         } else if (Array.isArray(annotation.body)) {
             // assume text content is first body element
             annotation.body[0].value = editorContent || "";

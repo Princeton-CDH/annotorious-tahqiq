@@ -10,7 +10,7 @@ interface Annotation {
     body: Body | Body[];
     "dc:source"?: string;
     id?: string;
-    motivation: string;
+    motivation: string | string[];
     "schema:position"?: number | null;
     target: Target;
     type: string;
