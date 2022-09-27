@@ -37,8 +37,7 @@ const settings = {
 let fakeAnnotation = {
     id: "someId",
     "@context": "fakeContext",
-    body: {},
-    motivation: "commenting",
+    body: { value: "fake" },
     target: { source: "fakesource" },
     type: "Annotation",
 };
@@ -59,8 +58,7 @@ describe("Storage instantiation", () => {
         fakeAnnotation = {
             id: "someId",
             "@context": "fakeContext",
-            body: {},
-            motivation: "commenting",
+            body: { value: "fake" },
             target: { source: "fakesource" },
             type: "Annotation",
         };
@@ -115,8 +113,7 @@ describe("Event handlers", () => {
         fakeAnnotation = {
             id: "someId",
             "@context": "fakeContext",
-            body: {},
-            motivation: "commenting",
+            body: { value: "fake" },
             target: { source: "fakesource" },
             type: "Annotation",
         };
@@ -138,7 +135,6 @@ describe("Event handlers", () => {
             JSON.stringify({
                 ...fakeAnnotation,
                 id: "assignedId",
-                "dc:source": "https://fakesource.uri",
             }),
             {
                 status: 200,
@@ -150,12 +146,11 @@ describe("Event handlers", () => {
         // should include dc:source in annotation passed to create method
         expect(createSpy).toHaveBeenCalledWith({
             ...fakeAnnotation,
-            "dc:source": "https://fakesource.uri",
+            "dc:source": settings.sourceUri,
         });
         // should get new id from server
         const newAnnotation = {
             ...originalAnnotation,
-            "dc:source": "https://fakesource.uri",
             id: "assignedId",
             target: { source: "fakesource" },
         };
@@ -184,8 +179,7 @@ describe("Event handlers", () => {
         const previous = {
             "@context": "oldfakeContext",
             id: "oldId",
-            body: {},
-            motivation: "commenting",
+            body: { value: "fake" },
             target: { source: "oldfakesource" },
             type: "Annotation",
         };
@@ -202,7 +196,6 @@ describe("Event handlers", () => {
         );
         const newAnnotation = {
             ...originalAnnotation,
-            "dc:source": "https://fakesource.uri",
             id: "assignedId",
             target: { source: "fakesource" },
         };
@@ -244,8 +237,7 @@ describe("Load annotations", () => {
         fakeAnnotation = {
             id: "someId",
             "@context": "fakeContext",
-            body: {},
-            motivation: "commenting",
+            body: { value: "fake" },
             target: { source: "fakesource" },
             type: "Annotation",
         };
@@ -290,5 +282,57 @@ describe("Load annotations", () => {
             expect(annotations[0]["schema:position"]).toEqual(1);
             expect(annotations[5]["schema:position"]).toEqual(null);
         }
+    });
+});
+
+describe("Create annotations with secondary motivation", () => {
+    beforeEach(() => {
+        // Reset mocks before each test
+        clientMock.on.mockClear();
+        clientMock.setAnnotations.mockClear();
+        fetchMock.resetMocks();
+        fakeAnnotation = {
+            id: "someId",
+            "@context": "fakeContext",
+            body: { value: "fake" },
+            target: { source: "fakesource" },
+            type: "Annotation",
+        };
+    });
+    it("should add secondary motivation from settings to annotation", async () => {
+        fetchMock.mockResponseOnce(
+            JSON.stringify({ resources: [fakeAnnotation] }),
+            {
+                status: 200,
+                statusText: "ok",
+            },
+        );
+
+        // initialize the storage with secondaryMotivation
+        const storage = new AnnotationServerStorage(clientMock, {
+            ...settings,
+            secondaryMotivation: "transcribing",
+        });
+
+        // mock client response
+        fetchMock.mockResponseOnce(
+            JSON.stringify({
+                ...fakeAnnotation,
+                id: "assignedId",
+            }),
+            {
+                status: 200,
+                statusText: "ok",
+            },
+        );
+        const createSpy = jest.spyOn(storage, "create");
+        await storage.handleCreateAnnotation(fakeAnnotation);
+
+        // should add "transcribing" as secondary motivation
+        expect(createSpy).toHaveBeenCalledWith({
+            ...fakeAnnotation,
+            "dc:source": settings.sourceUri,
+            motivation: ["sc:supplementing", "transcribing"],
+        });
     });
 });
