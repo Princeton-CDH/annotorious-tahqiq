@@ -79,6 +79,11 @@ class AnnotationServerStorage {
             annotation["dc:source"] = this.settings.sourceUri;
         }
 
+        // save primary and secondary (if applicable) motivation on annotation
+        annotation.motivation = this.settings.secondaryMotivation
+            ? ["sc:supplementing", this.settings.secondaryMotivation]
+            : "sc:supplementing";
+
         // increment annotation count and set position attribute
         this.setAnnotationCount(this.annotationCount + 1);
         if (!annotation["schema:position"]) {
