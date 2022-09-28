@@ -96,6 +96,19 @@ class TranscriptionEditor {
             this.handleChangeSelectionTarget.bind(this),
         );
 
+        // when Annotorious cancels an annotation, we should too
+        this.anno.on(
+            "cancelSelected",
+            (selection: Selection) => {
+                // pass selection as CustomEvent.detail so we can cancel the right one
+                // (e.g. if there are multiple annotations being edited on different canvases
+                // at once)
+                document.dispatchEvent(
+                    new CustomEvent("cancel-annotation", { detail: selection }),
+                );
+            },
+        );
+
         // Prepare tinyMCE editor custom element and config
         if (!customElements.get("tinymce-editor")) {
             Editor();
