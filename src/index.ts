@@ -319,7 +319,6 @@ class TranscriptionEditor {
                 // - purpose on body is only needed if more than one body
                 //   (e.g., transcription + tags in the same annotation)
             });
-            // TODO: transcription language, etc.
         } else if (Array.isArray(annotation.body)) {
             // assume text content is first body element
             annotation.body[0].value = editorContent || "";
