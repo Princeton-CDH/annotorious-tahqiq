@@ -2,9 +2,6 @@ import type { Annotation, SavedAnnotation } from "./types/Annotation";
 import type { Source } from "./types/Source";
 import type { Settings } from "./types/Settings";
 
-// define a custom event to indicate that annotations have been loaded
-const AnnoLoadEvent = new Event("annotations-loaded");
-
 // TODO: Add a typedef for the Annotorious client (anno)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 /**
@@ -59,7 +56,10 @@ class AnnotationServerStorage {
         if (annotations instanceof Array) {
             this.annotationCount = annotations.length;
         }
-        setTimeout(() => document.dispatchEvent(AnnoLoadEvent), 100);
+        setTimeout(() => document.dispatchEvent(
+            // include target with annotations-loaded event to match canvases
+            new CustomEvent("annotations-loaded", { detail: this.settings.target }),
+        ), 100);
         return annotations;
     }
 
@@ -100,7 +100,10 @@ class AnnotationServerStorage {
         this.anno.addAnnotation(newAnnotation);
 
         // reload annotations
-        document.dispatchEvent(AnnoLoadEvent);
+        document.dispatchEvent(
+            // include target with annotations-loaded event to match canvases
+            new CustomEvent("annotations-loaded", { detail: this.settings.target }),
+        );
         return Promise.resolve(newAnnotation);
     }
 

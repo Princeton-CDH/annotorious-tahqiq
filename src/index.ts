@@ -143,66 +143,71 @@ class TranscriptionEditor {
 
     /**
      * Handler for custom annotations loaded event triggered by storage plugin.
+     *
+     * @param {Event} e The annotations-loaded custom event
      */
-    async handleAnnotationsLoaded() {
-        // remove any existing annotation blocks and drop zones, in case of update
-        this.annotationContainer
-            .querySelectorAll(".tahqiq-block-display")
-            .forEach((el) => el.remove());
-        this.annotationContainer.querySelector(".tahqiq-drop-zone")?.remove();
-        // display all current annotations
-        const currentAnnotations = await this.anno.getAnnotations();
-        // sort by position attribute if present (sometimes annotorious returns these out of order)
-        if (currentAnnotations)
-            currentAnnotations.sort((a: Annotation, b: Annotation) => {
-                // null position should go to the end; it means dragged from another canvas
-                if (a["schema:position"] === null) return 1;
-                if (b["schema:position"] === null) return -1;
-                if (a["schema:position"] && b["schema:position"])
-                    return a["schema:position"] - b["schema:position"];
-                return 0;
+    async handleAnnotationsLoaded(e: Event) {
+        // only reload if the event target (i.e. canvas) matches this one
+        if (e instanceof CustomEvent && e.detail === this.storage?.settings?.target) {
+            // remove any existing annotation blocks and drop zones, in case of update
+            this.annotationContainer
+                .querySelectorAll("[class^='tahqiq-block']")
+                .forEach((el) => el.remove());
+            this.annotationContainer.querySelector(".tahqiq-drop-zone")?.remove();
+            // display all current annotations
+            const currentAnnotations = await this.anno.getAnnotations();
+            // sort by position attribute if present (sometimes annotorious gets these out of order)
+            if (currentAnnotations)
+                currentAnnotations.sort((a: Annotation, b: Annotation) => {
+                    // null position should go to the end; it means dragged from another canvas
+                    if (a["schema:position"] === null) return 1;
+                    if (b["schema:position"] === null) return -1;
+                    if (a["schema:position"] && b["schema:position"])
+                        return a["schema:position"] - b["schema:position"];
+                    return 0;
+                });
+            currentAnnotations.forEach((annotation: Annotation) => {
+                this.annotationContainer.append(
+                    new AnnotationBlock({
+                        annotation,
+                        editable: false,
+                        onCancel: this.handleCancel.bind(this),
+                        onClick: this.handleClickAnnotationBlock.bind(this),
+                        onDelete: this.handleDeleteAnnotation.bind(this),
+                        onDrag: this.handleDrag.bind(this),
+                        onReorder: this.handleDropAnnotationBlock.bind(this),
+                        onSave: this.handleSaveAnnotation.bind(this),
+                        updateAnnotorious: this.anno.addAnnotation,
+                    }),
+                );
             });
-        currentAnnotations.forEach((annotation: Annotation) => {
-            this.annotationContainer.append(
-                new AnnotationBlock({
-                    annotation,
-                    editable: false,
-                    onCancel: this.handleCancel.bind(this),
-                    onClick: this.handleClickAnnotationBlock.bind(this),
-                    onDelete: this.handleDeleteAnnotation.bind(this),
-                    onDrag: this.handleDrag.bind(this),
-                    onReorder: this.handleDropAnnotationBlock.bind(this),
-                    onSave: this.handleSaveAnnotation.bind(this),
-                    updateAnnotorious: this.anno.addAnnotation,
-                }),
-            );
-        });
-        // if no annotations returned, append a drop zone here so we can drop annotations
-        // from other canvases onto this one
-        if (!currentAnnotations?.length) {
-            const dropZone = document.createElement("div");
-            dropZone.className = "tahqiq-drop-zone";
-            // add drag and drop event listeners to drop zone
-            dropZone.addEventListener("dragover", (evt) => {
-                evt.preventDefault();
-            });
-            dropZone.addEventListener("dragenter", (evt) => {
-                if (evt.currentTarget instanceof HTMLDivElement) {
-                    evt.currentTarget.classList.add("tahqiq-drag-target");
-                }
-            });
-            dropZone.addEventListener("dragleave", (evt) => {
-                if (evt.currentTarget instanceof HTMLDivElement) {
-                    evt.currentTarget.classList.remove("tahqiq-drag-target");
-                }
-            });
-            dropZone.addEventListener("drop", (evt) => {
-                if (evt.currentTarget instanceof HTMLDivElement) {
-                    evt.currentTarget.classList.remove("tahqiq-drag-target");
-                }
-                this.handleDropAnnotationBlock(evt);
-            });
-            this.annotationContainer.append(dropZone);
+            // if no annotations returned, append a drop zone here so we can drop annotations
+            // from other canvases onto this one
+            if (!currentAnnotations?.length) {
+                const dropZone = document.createElement("div");
+                dropZone.className = "tahqiq-drop-zone";
+                // add drag and drop event listeners to drop zone
+                dropZone.addEventListener("dragover", (evt) => {
+                    evt.preventDefault();
+                });
+                dropZone.addEventListener("dragenter", (evt) => {
+                    if (evt.currentTarget instanceof HTMLDivElement) {
+                        evt.currentTarget.classList.add("tahqiq-drag-target");
+                    }
+                });
+                dropZone.addEventListener("dragleave", (evt) => {
+                    if (evt.currentTarget instanceof HTMLDivElement) {
+                        evt.currentTarget.classList.remove("tahqiq-drag-target");
+                    }
+                });
+                dropZone.addEventListener("drop", (evt) => {
+                    if (evt.currentTarget instanceof HTMLDivElement) {
+                        evt.currentTarget.classList.remove("tahqiq-drag-target");
+                    }
+                    this.handleDropAnnotationBlock(evt);
+                });
+                this.annotationContainer.append(dropZone);
+            }
         }
     }
 
