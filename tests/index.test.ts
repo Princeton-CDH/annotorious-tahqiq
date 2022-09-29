@@ -51,6 +51,9 @@ const storageMock = {
     delete: jest.fn(),
     loadAnnotations: jest.fn(),
     update: jest.fn(),
+    settings: {
+        target: "canvas1",
+    },
 };
 const container = document.createElement("annotation-block");
 
@@ -76,7 +79,9 @@ describe("Set annotations draggable", () => {
         const editor = new TranscriptionEditor(
             clientMock, storageMock, container, "fakeTinyMceKey",
         );
-        editor.handleAnnotationsLoaded();
+        editor.handleAnnotationsLoaded(
+            new CustomEvent("annotations-loaded", { detail: "canvas1" }),
+        );
         editor.setAllDraggability(false);
         const blocks = editor.annotationContainer.querySelectorAll("annotation-block");
         blocks.forEach((block) => {

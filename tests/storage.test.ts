@@ -75,7 +75,7 @@ describe("Storage instantiation", () => {
         // Should dispatch the event "annotations-loaded" after 100ms
         await new Promise((res) => setTimeout(res, 100));
         expect(dispatchEventSpy).toHaveBeenCalledWith(
-            new Event("annotations-loaded"),
+            new CustomEvent("annotations-loaded", { detail: settings.target }),
         );
     });
     it("Should call setAnnotations with the fake annotation in an array", async () => {

@@ -41,10 +41,15 @@ class CancelButton extends HTMLButtonElement {
 
         // if this was cancelled by annotorious, should dispatch CustomEvent with a Selection in the
         // CustomEvent.details targeting the same canvas as this.annotationBlock.annotation
+        let thisSource = this.annotationBlock.annotation.target.source;
+        if (typeof thisSource !== "string") thisSource = thisSource.id;
         const cancelledByAnnotorious =
             evt instanceof CustomEvent &&
-            evt.detail?.target?.source ===
-                this.annotationBlock.annotation.target.source;
+            // handle target source of types string and Source
+            (
+                evt.detail?.target?.source === thisSource ||
+                evt.detail?.target?.source?.id === thisSource
+            );
         // if this was a click event or it was cancelled by annotorious, cancel!
         if (!(evt instanceof CustomEvent) || cancelledByAnnotorious) {
             // clear the selection from the image
