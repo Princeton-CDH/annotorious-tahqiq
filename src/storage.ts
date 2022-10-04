@@ -224,15 +224,19 @@ class AnnotationServerStorage {
      * @param {string} targetUri URI of the target to search for
      */
     async search(targetUri: string): Promise<void | SavedAnnotation[]> {
-        const { annotationEndpoint, sourceUri } = this.settings;
+        const { annotationEndpoint, sourceUri, manifest } = this.settings;
         const sourceQuery = sourceUri ? `&source=${sourceUri}` : "";
-        return fetch(`${annotationEndpoint}search/?uri=${targetUri}${sourceQuery}`, {
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                "X-CSRFToken": this.settings.csrf_token,
+        const manifestQuery = manifest ? `&manifest=${manifest}` : "";
+        return fetch(
+            `${annotationEndpoint}search/?uri=${targetUri}${sourceQuery}${manifestQuery}`,
+            {
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": this.settings.csrf_token,
+                },
             },
-        })
+        )
             .then(response => response.json())
             .then(data => <SavedAnnotation[]>data.resources);
         //     .catch(() => this.all());
