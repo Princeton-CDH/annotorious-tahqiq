@@ -56,10 +56,16 @@ class AnnotationServerStorage {
         if (annotations instanceof Array) {
             this.annotationCount = annotations.length;
         }
-        setTimeout(() => document.dispatchEvent(
-            // include target with annotations-loaded event to match canvases
-            new CustomEvent("annotations-loaded", { detail: this.settings.target }),
-        ), 100);
+        document.dispatchEvent(
+            new CustomEvent("annotations-loaded", {
+                detail: {
+                    // include target with event to match canvases
+                    target: this.settings.target,
+                    // include annotations here (annotorious might be briefly out of sync)
+                    annotations,
+                },
+            }),
+        );
         return annotations;
     }
 
