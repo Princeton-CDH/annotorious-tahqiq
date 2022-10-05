@@ -106,6 +106,7 @@ class AnnotationServerStorage {
         this.anno.addAnnotation(newAnnotation);
 
         // reload annotations
+        // TODO: Avoid extra network request here
         await this.loadAnnotations();
         return Promise.resolve(newAnnotation);
     }
