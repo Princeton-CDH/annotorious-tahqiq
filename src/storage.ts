@@ -106,10 +106,7 @@ class AnnotationServerStorage {
         this.anno.addAnnotation(newAnnotation);
 
         // reload annotations
-        document.dispatchEvent(
-            // include target with annotations-loaded event to match canvases
-            new CustomEvent("annotations-loaded", { detail: this.settings.target }),
-        );
+        await this.loadAnnotations();
         return Promise.resolve(newAnnotation);
     }
 
