@@ -80,7 +80,12 @@ describe("Set annotations draggable", () => {
             clientMock, storageMock, container, "fakeTinyMceKey",
         );
         editor.handleAnnotationsLoaded(
-            new CustomEvent("annotations-loaded", { detail: "canvas1" }),
+            new CustomEvent("annotations-loaded", {
+                detail: {
+                    target: "canvas1",
+                    annotations: [fakeAnnotation],
+                },
+            }),
         );
         editor.setAllDraggability(false);
         const blocks = editor.annotationContainer.querySelectorAll("annotation-block");

@@ -70,12 +70,13 @@ describe("Storage instantiation", () => {
 
         // initialize the storage
         const storage = new AnnotationServerStorage(clientMock, settings);
-        await storage.loadAnnotations();
+        const annotations = await storage.loadAnnotations();
 
-        // Should dispatch the event "annotations-loaded" after 100ms
-        await new Promise((res) => setTimeout(res, 100));
+        // Should dispatch the event "annotations-loaded"
         expect(dispatchEventSpy).toHaveBeenCalledWith(
-            new CustomEvent("annotations-loaded", { detail: settings.target }),
+            new CustomEvent("annotations-loaded", {
+                detail: { target: settings.target, annotations },
+            }),
         );
     });
     it("Should call setAnnotations with the fake annotation in an array", async () => {
@@ -122,26 +123,38 @@ describe("Event handlers", () => {
     it("should respond to emitted createAnnotation event with handler", async () => {
         const originalAnnotation = { ...fakeAnnotation };
         // initialize the storage
-        fetchMock.mockResponseOnce(
-            JSON.stringify({ resources: [fakeAnnotation] }),
-            {
-                status: 200,
-                statusText: "ok",
-            },
+        fetchMock.mockResponses(
+            [
+                JSON.stringify({ resources: [fakeAnnotation] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            [
+                JSON.stringify({
+                    ...fakeAnnotation,
+                    id: "assignedId",
+                }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            [
+                JSON.stringify({ resources: [fakeAnnotation] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
         );
         const storage = new AnnotationServerStorage(clientMock, settings);
 
-        fetchMock.mockResponseOnce(
-            JSON.stringify({
-                ...fakeAnnotation,
-                id: "assignedId",
-            }),
-            {
-                status: 200,
-                statusText: "ok",
-            },
+        const createSpy = jest.spyOn(
+            AnnotationServerStorage.prototype,
+            "create",
         );
-        const createSpy = jest.spyOn(AnnotationServerStorage.prototype, "create");
         await clientMock.emit("createAnnotation", fakeAnnotation);
         // should include dc:source in annotation passed to create method
         expect(createSpy).toHaveBeenCalledWith({
@@ -300,12 +313,31 @@ describe("Create annotations with secondary motivation", () => {
         };
     });
     it("should add secondary motivation from settings to annotation", async () => {
-        fetchMock.mockResponseOnce(
-            JSON.stringify({ resources: [fakeAnnotation] }),
-            {
-                status: 200,
-                statusText: "ok",
-            },
+        fetchMock.mockResponses(
+            [
+                JSON.stringify({ resources: [fakeAnnotation] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            [
+                JSON.stringify({
+                    ...fakeAnnotation,
+                    id: "assignedId",
+                }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            [
+                JSON.stringify({ resources: [fakeAnnotation] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
         );
 
         // initialize the storage with secondaryMotivation
@@ -313,18 +345,6 @@ describe("Create annotations with secondary motivation", () => {
             ...settings,
             secondaryMotivation: "transcribing",
         });
-
-        // mock client response
-        fetchMock.mockResponseOnce(
-            JSON.stringify({
-                ...fakeAnnotation,
-                id: "assignedId",
-            }),
-            {
-                status: 200,
-                statusText: "ok",
-            },
-        );
         const createSpy = jest.spyOn(storage, "create");
         await storage.handleCreateAnnotation(fakeAnnotation);
 
