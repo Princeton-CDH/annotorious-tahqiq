@@ -347,6 +347,7 @@ class TranscriptionEditor {
                 annotation.body[0].label = annotationBlock.labelElement.textContent;
             }
         }
+        // turn off draggability for all blocks while saving
         this.setAllDraggability(false);
         // update with annotorious, save to, and reload from storage backend
         await this.anno.updateSelected(annotation, true);
