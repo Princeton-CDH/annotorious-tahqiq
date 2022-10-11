@@ -211,6 +211,7 @@ class TranscriptionEditor {
                 this.annotationContainer.append(dropZone);
             }
         }
+        this.setAllDraggability(true);
     }
 
     /**
@@ -301,8 +302,8 @@ class TranscriptionEditor {
                 this.storage.setAnnotationCount(this.storage.annotationCount - 1);
                 // remove the edit/display displayBlock
                 annotationBlock.remove();
-                // calling removeAnnotation doesn't fire the deleteAnnotation,
-                // so we have to trigger the deletion explicitly
+                // calling removeAnnotation doesn't fire the deleteAnnotation event,
+                // so we have to trigger the deletion explicitly (also avoids race condition!)
                 await this.storage.delete(annotationBlock.annotation);
                 // reload positions of all annotation blocks except this one
                 const blocks = this.annotationContainer.querySelectorAll(".tahqiq-block-display");
@@ -346,17 +347,9 @@ class TranscriptionEditor {
                 annotation.body[0].label = annotationBlock.labelElement.textContent;
             }
         }
-        // update with annotorious and save to storage backend
+        this.setAllDraggability(false);
+        // update with annotorious, save to, and reload from storage backend
         await this.anno.updateSelected(annotation, true);
-        // update annotation block with new annotation and set inactive
-        annotationBlock.setAnnotation(annotation);
-        annotationBlock.makeReadOnly();
-        // reload annotations from storage (for post-save effects e.g. html sanitization)
-        await this.storage.loadAnnotations();
-        // make all annotations draggable again
-        this.setAllDraggability(true);
-        // remove any drop zones if present
-        this.annotationContainer.querySelector(".tahqiq-drop-zone")?.remove();
     }
 
     /**
