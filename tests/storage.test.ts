@@ -197,21 +197,30 @@ describe("Event handlers", () => {
             type: "Annotation",
         };
 
-        fetchMock.mockResponseOnce(
-            JSON.stringify({
-                ...fakeAnnotation,
-                id: "oldId",
-            }),
-            {
-                status: 200,
-                statusText: "ok",
-            },
-        );
         const newAnnotation = {
             ...originalAnnotation,
             id: "assignedId",
             target: { source: "fakesource" },
         };
+        fetchMock.mockResponses(
+            [
+                JSON.stringify({
+                    ...fakeAnnotation,
+                    id: "oldId",
+                }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            [
+                JSON.stringify({ resources: [newAnnotation] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+        );
         clientMock.emit("updateAnnotation", annotation, previous);
         // should call addAnnotation on client
         expect(clientMock.addAnnotation).toHaveBeenCalledWith(newAnnotation);
@@ -228,10 +237,22 @@ describe("Event handlers", () => {
         );
         const storage = new AnnotationServerStorage(clientMock, settings);
 
-        fetchMock.mockResponseOnce(JSON.stringify({}), {
-            status: 200,
-            statusText: "ok",
-        });
+        fetchMock.mockResponses(
+            [
+                JSON.stringify({}),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            [
+                JSON.stringify({ resources: [] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+        );
 
         clientMock.emit("deleteAnnotation", fakeAnnotation);
         // should call adapter.delete
