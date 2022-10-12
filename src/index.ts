@@ -329,7 +329,7 @@ class TranscriptionEditor {
      * @param {HTMLElement} annotationBlock Annotation block associated with the annotation to save.
      */
     async handleSaveAnnotation(annotationBlock: AnnotationBlock) {
-        this.storage.alert("Saving annotation");
+        this.storage.alert("Saving...");
         const annotation = annotationBlock.annotation;
         const editorContent = window.tinymce.get(annotationBlock.editorId).getContent();
         // add the content to the annotation
@@ -479,7 +479,6 @@ class TranscriptionEditor {
         const annotations = await this.storage.loadAnnotations();
         try {
             await this.updateSequence(annotations);
-            this.storage.alert("Annotations reordered", "success");
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             // handle errors thrown by storage.update in updateSequence
