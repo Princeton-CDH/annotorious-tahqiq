@@ -290,6 +290,7 @@ class TranscriptionEditor {
      */
     async handleDeleteAnnotation(annotationBlock: AnnotationBlock) {
         try {
+            this.storage.alert("Deleting...");
             if (!annotationBlock.annotation.id) {
                 this.storage.alert(
                     "No annotation ID associated with this display block",
@@ -420,6 +421,7 @@ class TranscriptionEditor {
             anno?.id === draggedId,
         );
         if (draggedAnnotation && evt.currentTarget instanceof AnnotationBlock) {
+            this.storage.alert("Reordering...");
             // dragged block found in current tahqiq instance
             const draggedIndex = annotations.indexOf(draggedAnnotation);
             const droppedIndex = annotations.indexOf(evt.currentTarget.annotation);
@@ -436,6 +438,7 @@ class TranscriptionEditor {
             }
         } else {
             // dragged block is from another tahqiq instance on the document
+            this.storage.alert("Moving...");
             const draggedBlock = document.querySelector(
                 `[data-annotation-id="${draggedId}"]`,
             );
