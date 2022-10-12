@@ -80,6 +80,13 @@ This plugin exposes the following CSS classes that can be used to style its elem
   - `.tahqiq-drop-zone`: When running multiple instances of Tahqiq on the same page, this `div` will appear on an instance that has no annotations when the user begins dragging an annotation from another instance 
   - `.tahqiq-loading`: To compensate for network request timing, this class is added to all annotation containers after a drag and drop is completed, and removed when the network requests are finished
 
+
+### Events
+
+This plugin also raises custom events to report errors and other messages.
+
+- `tahqiq-alert`: A [`CustomEvent`](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent) with a `detail` object containing `message`, `status`, and `target`. `message` is an info, success, or error message; `status` is one of "info", "success", or "error"; and `target` is the target set in the settings for the storage plugin.
+
 ## Development
 
 ### Getting started

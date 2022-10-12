@@ -54,6 +54,7 @@ const storageMock = {
     settings: {
         target: "canvas1",
     },
+    alert: jest.fn(),
 };
 const container = document.createElement("annotation-block");
 
