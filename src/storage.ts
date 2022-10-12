@@ -121,7 +121,7 @@ class AnnotationServerStorage {
     async handleUpdateAnnotation(
         annotation: SavedAnnotation,
         previous: SavedAnnotation,
-    ): Promise<void> {
+    ): Promise<Annotation> {
         // The posted annotation should have an @id which exists in the store
         // we want to keep the same id, so we update the new annotation with
         // the previous id before saving.
@@ -130,9 +130,14 @@ class AnnotationServerStorage {
         annotation.target.source = this.adjustTargetSource(
             annotation.target.source,
         );
-        const updatedAnnotation: SavedAnnotation = await this.update(annotation);
+        const updatedAnnotation: SavedAnnotation = await this.update(
+            annotation,
+        );
         // redisplay the updated annotation in annotorious
         this.anno.addAnnotation(updatedAnnotation);
+        // reload annotations from storage (for post-save effects e.g. html sanitization)
+        await this.loadAnnotations();
+        return Promise.resolve(updatedAnnotation);
     }
 
     /**
@@ -142,9 +147,11 @@ class AnnotationServerStorage {
      * @param {SavedAnnotation} annotation Annotation to delete; must have an
      * id property that matches its id property in the store.
      */
-    handleDeleteAnnotation(annotation: SavedAnnotation) {
+    async handleDeleteAnnotation(annotation: SavedAnnotation): Promise<void> {
         this.setAnnotationCount(this.annotationCount - 1);
-        this.delete(annotation);
+        await this.delete(annotation);
+        await this.loadAnnotations();
+        return Promise.resolve();
     }
 
     /**
