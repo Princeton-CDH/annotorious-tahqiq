@@ -22,16 +22,39 @@ This project uses [Volta](https://volta.sh/) to pin Node and NPM versions.
 This plugin can be installed with NPM:
 
 ```sh
-npm install --save https://github.com/Princeton-CDH/annotorious-tahqiq.git
+npm install --save annotorious-tahqiq
 ```
 
 Then, to use alongside Annotorious and a storage plugin:
 
 ```js
+import {
+  TranscriptionEditor,
+  AnnotationServerStorage,
+} from "annotorious-tahqiq";
+
+// Initialize Annotorious with your settings
 const client = Annotorious(annotoriousSettings);
-const storagePlugin = StoragePlugin(); // An Annotorious plugin for storing annotations
-const annotationContainer = document.getElementById("annotation"); // An empty HTML element that the editor will be placed into.
-const tinyApiKey = "1234567890"; // Your TinyMCE editor API key (optional, can be omitted for testing purposes).
+
+// Initialize annotorious-tahqiq storage plugin
+const storageSettings = {
+    annotationEndpoint,   // Endpoint of the annotation store
+    target,               // Target for annotations (typically, a IIIF canvas)
+    manifest,             // IIIF manifest that target is a part of
+    csrf_token,           // CSRF token for communication with annotation store
+    secondaryMotivation,  // Optional secondary motivation for annotations
+                          // (primary is "sc:supplementing")
+    sourceUri,            // Optional "dc:source" URI attribute for annotations
+};
+const storagePlugin = AnnotationServerStorage(client, storageSettings);
+
+// Locate an empty HTML element that the editor will be placed into
+const annotationContainer = document.getElementById("annotation");
+
+// Your TinyMCE editor API key (optional, can be omitted for testing purposes)
+const tinyApiKey = "1234567890";
+
+// Initalize annotorious-tahqiq editor
 new TranscriptionEditor(client, storagePlugin, annotationContainer, tinyApiKey);
 ```
 
