@@ -8,6 +8,10 @@ Bug fixes and minor improvements.
 
 - Prevent a race condition on saving and retrieving annotations
 
+### Features
+
+- Raise alert events for info, error, and success statuses
+
 ## 1.0.0
 
 Initial public release of annotorious-tahqiq.

@@ -290,10 +290,11 @@ class TranscriptionEditor {
      */
     async handleDeleteAnnotation(annotationBlock: AnnotationBlock) {
         try {
+            this.storage.alert("Deleting...");
             if (!annotationBlock.annotation.id) {
-                // TODO: Better error handling
-                throw new Error(
-                    "No annotation ID associated with this display block.",
+                this.storage.alert(
+                    "No annotation ID associated with this display block",
+                    "error",
                 );
             } else {
                 // remove the highlight zone from the image
@@ -313,10 +314,12 @@ class TranscriptionEditor {
                         return block.annotation;
                 });
                 await this.updateSequence(annotations);
+                this.storage.alert("Annotation deleted", "success");
             }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-            console.error(err.message);
+            // handle errors thrown by storage.delete
+            this.storage.alert(err.message, "error");
         }
     }
 
@@ -327,6 +330,7 @@ class TranscriptionEditor {
      * @param {HTMLElement} annotationBlock Annotation block associated with the annotation to save.
      */
     async handleSaveAnnotation(annotationBlock: AnnotationBlock) {
+        this.storage.alert("Saving...");
         const annotation = annotationBlock.annotation;
         const editorContent = window.tinymce.get(annotationBlock.editorId).getContent();
         // add the content to the annotation
@@ -417,15 +421,24 @@ class TranscriptionEditor {
             anno?.id === draggedId,
         );
         if (draggedAnnotation && evt.currentTarget instanceof AnnotationBlock) {
+            this.storage.alert("Reordering...");
             // dragged block found in current tahqiq instance
             const draggedIndex = annotations.indexOf(draggedAnnotation);
             const droppedIndex = annotations.indexOf(evt.currentTarget.annotation);
             // move the dragged block to the correct index
             annotations.splice(draggedIndex, 1);
             annotations.splice(droppedIndex, 0, draggedAnnotation);
-            await this.updateSequence(annotations);
+            try {
+                await this.updateSequence(annotations);
+                this.storage.alert("Annotations reordered", "success");
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } catch (err: any) {
+                // handle errors thrown by storage.update in updateSequence
+                this.storage.alert(err.message, "error");
+            }
         } else {
             // dragged block is from another tahqiq instance on the document
+            this.storage.alert("Moving...");
             const draggedBlock = document.querySelector(
                 `[data-annotation-id="${draggedId}"]`,
             );
@@ -444,10 +457,19 @@ class TranscriptionEditor {
                     },
                     "schema:position": null,
                 };
-                // update the dragged block in storage
-                await this.storage.update(newAnnotation);
-                // recalculate positions in both this and origin tahqiq instances
-                document.dispatchEvent(ReloadPositionsEvent);
+                try {
+                    // update the dragged block in storage
+                    await this.storage.update(newAnnotation);
+                    this.storage.alert("Annotation moved", "success");
+                    // recalculate positions in both this and origin tahqiq instances
+                    document.dispatchEvent(ReloadPositionsEvent);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } catch (err: any) {
+                    // handle errors thrown by storage.update
+                    this.storage.alert(err.message, "error");
+                }
+            } else {
+                this.storage.alert("Error finding the dragged annotation", "error");
             }
         }
     }
@@ -458,7 +480,13 @@ class TranscriptionEditor {
      */
     async handleReloadAllPositions() {
         const annotations = await this.storage.loadAnnotations();
-        await this.updateSequence(annotations);
+        try {
+            await this.updateSequence(annotations);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+            // handle errors thrown by storage.update in updateSequence
+            this.storage.alert(err.message, "error");
+        }
     }
 
     /**
