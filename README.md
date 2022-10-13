@@ -25,6 +25,12 @@ This plugin can be installed with NPM:
 npm install --save annotorious-tahqiq
 ```
 
+or to install a specific version number:
+
+```sh
+npm install --save annotorious-tahqiq@1.0.1
+```
+
 Then, to use alongside Annotorious and a storage plugin:
 
 ```js
