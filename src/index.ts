@@ -100,6 +100,20 @@ class TranscriptionEditor {
         this.anno.on(
             "cancelSelected",
             (selection: Selection) => {
+                // if a cancel is triggered but there are changes
+                // in the editor, give the user a chance to keep editing
+
+                // TODO: is there an equivalent check for annotation zone modified?
+                if (window.tinymce.activeEditor.isDirty()) {
+                    if (confirm("You have unsaved changes. Do you want to keep editing?") == true) {
+                        // if they click ok, return and don't process the cancelation
+                        // (do we need to undo the cancel in annotorious? doesn't seem like it)
+                        return;
+                    }
+                }
+                // if there are no changes or user clicked cancel,
+                // continue on to process the cancel
+
                 // pass selection as CustomEvent.detail so we can cancel the right one
                 // (e.g. if there are multiple annotations being edited on different canvases
                 // at once)
