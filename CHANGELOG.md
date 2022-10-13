@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.0.1
+
+Bug fixes and minor improvements.
+
+### Bug fixes
+
+- Prevent a race condition on saving and retrieving annotations
+
 ## 1.0.0
 
 Initial public release of annotorious-tahqiq.
