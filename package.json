@@ -18,7 +18,8 @@
     "keywords": [
         "annotorious",
         "transcription",
-        "annotation"
+        "annotation",
+        "right-to-left"
     ],
     "author": "The Center for Digital Humanities at Princeton <cdhdevteam@princeton.edu>",
     "license": "Apache-2.0",
