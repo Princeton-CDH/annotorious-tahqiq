@@ -21,6 +21,7 @@ const clientMock = {
     disableEditor: false,
     addAnnotation: jest.fn(),
     removeAnnotation: jest.fn(),
+    selectAnnotation: jest.fn(),
     getAnnotations: jest.fn().mockReturnValue([
         fakeAnnotation,
         {
@@ -59,6 +60,10 @@ const storageMock = {
 const container = document.createElement("annotation-block");
 
 describe("Plugin instantiation", () => {
+    afterEach(() => {
+        jest.clearAllMocks();  // clear counts after each test
+    });
+
     it("Should attach event listeners on initialization", () => {
         const addEventListenerSpy = jest.spyOn(document, "addEventListener");
         new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
@@ -73,6 +78,18 @@ describe("Plugin instantiation", () => {
         expect(customElements.get("delete-button")).toBeDefined();
         expect(customElements.get("cancel-button")).toBeDefined();
     });
+    it("Should bind handlers for annotorious events on initialization", () => {
+        const editor = new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
+        expect(clientMock.on).toBeCalledTimes(4);
+        // not sure how to compare bound functions;
+        // collect the first arguments of all calls to check bound signals
+        const boundSignals = clientMock.on.mock.calls.map(x => { return x[0] } );
+        const expectedBoundSignals = [
+            "createSelection", "selectAnnotation", 
+            "changeSelectionTarget",  "cancelSelected"];
+        expect(boundSignals).toEqual(expectedBoundSignals);
+    });
+
 });
 
 describe("Set annotations draggable", () => {
@@ -158,4 +175,87 @@ describe("Reload all positions", () => {
         // should reorder the returned annotations
         expect(updateSequenceSpy).toBeCalledWith(resolvedAnnos);
     });
+});
+
+describe("Handle cancelSelection event", () => {
+    beforeEach(() => {
+        // mock just the portion of tinymce we care about
+        window.tinymce = { activeEditor: { isDirty: jest.fn() } };
+        // mock global confirm method
+        global.confirm = jest.fn();
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();  // clear counts after each test
+    });
+
+    it("Should emit cancel-annotation when there are no changes to text", () => {
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
+        const dispatchEventSpy = jest.spyOn(document, "dispatchEvent");
+        new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
+        // simulate no changes
+        window.tinymce.activeEditor.isDirty.mockReturnValueOnce(false);
+
+        editor.handleCancelSelection(fakeAnnotation);
+        expect(window.tinymce.activeEditor.isDirty).toBeCalledTimes(1);
+        expect(dispatchEventSpy).toHaveBeenCalledWith(
+            new CustomEvent("cancel-annotation", { detail: fakeAnnotation })
+        );
+        expect(clientMock.selectAnnotation).toBeCalledTimes(0);
+    });
+
+     it("Should prompt user to confirm when there are changes to text", () => {
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
+        new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
+        // simulate changes in editor
+        window.tinymce.activeEditor.isDirty.mockReturnValueOnce(true);
+
+        editor.handleCancelSelection(fakeAnnotation);
+        expect(global.confirm).toHaveBeenCalledWith("You have unsaved changes. Do you want to keep editing?");
+    });
+
+    it("Should not emit cancel-annotation if there are changes and user wants to keep editing", () => {
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
+        const dispatchEventSpy = jest.spyOn(document, "dispatchEvent");
+        new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
+        // simulate changes
+        window.tinymce.activeEditor.isDirty.mockReturnValueOnce(true);
+        // simulate user says yes, keep editing
+        jest.spyOn(global, 'confirm' as any).mockReturnValueOnce(true);
+
+        editor.handleCancelSelection(fakeAnnotation);
+        // should not propagate the cancel event
+        expect(dispatchEventSpy).toBeCalledTimes(0);
+        // should reselect the annotation
+        expect(clientMock.selectAnnotation).toBeCalledTimes(1);
+    });
+
+    it("Should emit cancel-annotation if there are changes but user wants to cancel", () => {
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
+        const dispatchEventSpy = jest.spyOn(document, "dispatchEvent");
+        new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
+        // simulate changes
+        window.tinymce.activeEditor.isDirty.mockReturnValueOnce(true);
+        // simulate user says no, realy cancel
+        jest.spyOn(global, 'confirm' as any).mockReturnValueOnce(false);
+
+        editor.handleCancelSelection(fakeAnnotation);
+        // should propagate the cancel event
+        expect(dispatchEventSpy).toBeCalledTimes(1);
+        // should not reselect the annotation
+        expect(clientMock.selectAnnotation).toBeCalledTimes(0);
+        expect(dispatchEventSpy).toHaveBeenCalledWith(
+            new CustomEvent("cancel-annotation", { detail: fakeAnnotation })
+        );
+
+    });
+
 });

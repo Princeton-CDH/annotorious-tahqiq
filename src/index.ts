@@ -95,32 +95,9 @@ class TranscriptionEditor {
             "changeSelectionTarget",
             this.handleChangeSelectionTarget.bind(this),
         );
-
-        // when Annotorious cancels an annotation, we should too
         this.anno.on(
             "cancelSelected",
-            (selection: Selection) => {
-                // if a cancel is triggered but there are changes
-                // in the editor, give the user a chance to keep editing
-
-                // TODO: is there an equivalent check for annotation zone modified?
-                if (window.tinymce.activeEditor.isDirty()) {
-                    if (confirm("You have unsaved changes. Do you want to keep editing?") == true) {
-                        // if they click ok, return and don't process the cancelation
-                        // (do we need to undo the cancel in annotorious? doesn't seem like it)
-                        return;
-                    }
-                }
-                // if there are no changes or user clicked cancel,
-                // continue on to process the cancel
-
-                // pass selection as CustomEvent.detail so we can cancel the right one
-                // (e.g. if there are multiple annotations being edited on different canvases
-                // at once)
-                document.dispatchEvent(
-                    new CustomEvent("cancel-annotation", { detail: selection }),
-                );
-            },
+            this.handleCancelSelection.bind(this),
         );
 
         // Prepare tinyMCE editor custom element and config
@@ -250,7 +227,7 @@ class TranscriptionEditor {
     }
 
     /**
-     * On cancellation, cancel with annotorious and set all draggable
+     * When cancel button is clicked, cancel with annotorious and set all draggable
      */
     handleCancel() {
         // cancel with annotorious
@@ -295,6 +272,37 @@ class TranscriptionEditor {
         if (this.currentAnnotationBlock != null) {
             this.currentAnnotationBlock.annotation.target = target;
         }
+    }
+
+    /**
+     * Handler for annotorious cancel selection event
+     *
+     * @param {Annotation} selection the active selection being canceled
+     */
+    handleCancelSelection(selection: Annotation) {
+        // when Annotorious cancels an Annotation, we should too
+
+        // if a cancel is triggered but there are changes
+        // in the editor, give the user a chance to keep editing.
+        // NOTE: does not account for changes to label or annotation zone;
+        if (window.tinymce.activeEditor.isDirty()) {
+            if (confirm("You have unsaved changes. Do you want to keep editing?") == true) {
+                // if they click ok:
+                // - reselect so Annotorious knows selection is still active
+                this.anno.selectAnnotation(selection);
+                // - return and don't process the cancelation
+                return;
+            }
+        }
+        // if there are no changes or user clicked cancel,
+        // continue on to process the cancel
+
+        // pass selection as CustomEvent.detail so we can cancel the right one
+        // (e.g. if there are multiple annotations being edited on different canvases
+        // at once)
+        document.dispatchEvent(
+            new CustomEvent("cancel-annotation", { detail: selection }),
+        );
     }
 
     /**
