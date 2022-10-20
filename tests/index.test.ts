@@ -105,11 +105,12 @@ describe("Set annotations draggable", () => {
                 },
             }),
         );
-        editor.setAllDraggability(false);
+        editor.setAllInteractive(false);
         const blocks = editor.annotationContainer.querySelectorAll("annotation-block");
         blocks.forEach((block) => {
             if (block instanceof AnnotationBlock) {
                 expect(block.draggable).toBe(false);
+                expect(block.clickable).toBe(false);
             }
         });
     });
@@ -145,7 +146,7 @@ describe("Update annotations sequence", () => {
         const editor = new TranscriptionEditor(
             clientMock, storageMock, container, "fakeTinyMceKey",
         );
-        const draggabilitySpy = jest.spyOn(editor, "setAllDraggability");
+        const draggabilitySpy = jest.spyOn(editor, "setAllInteractive");
         storageMock.loadAnnotations.mockClear();
         await editor.updateSequence(fakeAnnotationList);
         expect(draggabilitySpy).toBeCalledWith(false);

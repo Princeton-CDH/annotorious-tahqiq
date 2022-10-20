@@ -38,6 +38,8 @@ class TranscriptionEditor {
 
     currentAnnotationBlock: AnnotationBlock | null;
 
+    skipCancellation: string | undefined;
+
     // TODO: Add typedefs for the Annotorious client (anno) and storage plugin
 
     /**
@@ -202,7 +204,7 @@ class TranscriptionEditor {
                 this.annotationContainer.append(dropZone);
             }
         }
-        this.setAllDraggability(true);
+        this.setAllInteractive(true);
     }
 
     /**
@@ -233,7 +235,7 @@ class TranscriptionEditor {
         // cancel with annotorious
         this.anno.cancelSelected();
         // make all annotations draggable
-        this.setAllDraggability(true);
+        this.setAllInteractive(true);
     }
 
     /**
@@ -243,6 +245,9 @@ class TranscriptionEditor {
      * @param {Annotation} annotation Annotorious annotation.
      */
     handleSelectAnnotation(annotation: Annotation) {
+        // if we're aborting cancelation and this is not the uncanceled
+        // annotation, don't process the select
+
         // The user has selected an existing annotation
         // find the display element by annotation id and swith to edit mode
         const annotationBlock = document.querySelector(
@@ -255,7 +260,7 @@ class TranscriptionEditor {
             // set current annotation block
             this.currentAnnotationBlock = <AnnotationBlock>annotationBlock;
             // ensure no annotation block is draggable
-            this.setAllDraggability(false);
+            this.setAllInteractive(false);
         }
     }
 
@@ -282,15 +287,24 @@ class TranscriptionEditor {
     handleCancelSelection(selection: Annotation) {
         // when Annotorious cancels an Annotation, we should too
 
+        // special case: reselecting a canceled annotation fires
+        // the cancel event; skip if annotation id matches
+        if (this.skipCancellation == selection.id) {
+            return;
+        }
+
         // if a cancel is triggered but there are changes
         // in the editor, give the user a chance to keep editing.
         // NOTE: does not account for changes to label or annotation zone;
         if (window.tinymce.activeEditor.isDirty()) {
             if (confirm("You have unsaved changes. Do you want to keep editing?") == true) {
                 // if they click ok:
+                // - flag that we don't want to cancel this selection
+                this.skipCancellation = selection.id;
                 // - reselect so Annotorious knows selection is still active
-                this.anno.selectAnnotation(selection);
-                // - return and don't process the cancelation
+                this.anno.selectAnnotation(selection.id);
+                this.skipCancellation = "";
+                // return and don't process the cancelation
                 return;
             }
         }
@@ -374,7 +388,7 @@ class TranscriptionEditor {
             }
         }
         // turn off draggability for all blocks while saving
-        this.setAllDraggability(false);
+        this.setAllInteractive(false);
         // update with annotorious, save to, and reload from storage backend
         await this.anno.updateSelected(annotation, true);
     }
@@ -392,7 +406,7 @@ class TranscriptionEditor {
             // make sure no other annotation blocks are editable
             this.makeAllReadOnlyExcept(annotationBlock);
             // ensure no annotation block is draggable
-            this.setAllDraggability(false);
+            this.setAllInteractive(false);
         }
     }
 
@@ -519,7 +533,7 @@ class TranscriptionEditor {
      */
     async updateSequence(annotations: (Annotation | undefined)[]) {
         // turn off draggability for all blocks while loading
-        this.setAllDraggability(false);
+        this.setAllInteractive(false);
         await Promise.all(annotations.map(async (anno, i) => {
             const position = i + 1;
             if (
@@ -561,14 +575,15 @@ class TranscriptionEditor {
     /**
      * Set draggability on or off for all blocks.
      * 
-     * @param {boolean} draggable Whether or not blocks should be draggable.
+     * @param {boolean} interactive Whether or not blocks should be draggable and clickable
      */
-    setAllDraggability(draggable: boolean) {
+    setAllInteractive(interactive: boolean) {
         this.annotationContainer
             .querySelectorAll("annotation-block")
             .forEach((block) => {
                 if (block instanceof AnnotationBlock) {
-                    block.setDraggable(draggable);
+                    block.setDraggable(interactive);
+                    block.setClickable(interactive);
                 }
             });
     }
