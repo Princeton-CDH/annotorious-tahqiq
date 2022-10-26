@@ -174,6 +174,36 @@ describe("Event handlers", () => {
         expect(storage.annotationCount).toEqual(1);
     });
 
+    it("should alert on create error", async () => {
+        fetchMock.mockResponses(
+            // mock initial 200 response from load
+            [
+                JSON.stringify({ resources: [fakeAnnotation] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            // mock 404
+            [
+                JSON.stringify(fakeAnnotation),
+                {
+                    status: 400,
+                    statusText: "Bad request",
+                },
+            ],
+        );
+        // initialize the storage
+        const storage = new AnnotationServerStorage(clientMock, settings);
+        // watch alert for message
+        const alertSpy = jest.spyOn(storage, "alert");
+        await storage.handleCreateAnnotation(fakeAnnotation);
+        expect(alertSpy).toHaveBeenCalledWith(
+            "Error creating annotation: 400 Bad request",
+            "error",
+        );
+    });
+
     it("should respond to emitted updateAnnotation event with handler", async () => {
         const originalAnnotation = { ...fakeAnnotation };
         // initialize the storage
@@ -197,24 +227,63 @@ describe("Event handlers", () => {
             type: "Annotation",
         };
 
-        fetchMock.mockResponseOnce(
-            JSON.stringify({
-                ...fakeAnnotation,
-                id: "oldId",
-            }),
-            {
-                status: 200,
-                statusText: "ok",
-            },
-        );
         const newAnnotation = {
             ...originalAnnotation,
             id: "assignedId",
             target: { source: "fakesource" },
         };
+        fetchMock.mockResponses(
+            [
+                JSON.stringify({
+                    ...fakeAnnotation,
+                    id: "oldId",
+                }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            [
+                JSON.stringify({ resources: [newAnnotation] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+        );
         clientMock.emit("updateAnnotation", annotation, previous);
         // should call addAnnotation on client
         expect(clientMock.addAnnotation).toHaveBeenCalledWith(newAnnotation);
+    });
+
+    it("should alert on update error", async () => {
+        fetchMock.mockResponses(
+            // mock initial 200 response from load
+            [
+                JSON.stringify({ resources: [fakeAnnotation] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            // mock 404
+            [
+                JSON.stringify(fakeAnnotation),
+                {
+                    status: 404,
+                    statusText: "Not Found",
+                },
+            ],
+        );
+        // initialize the storage
+        const storage = new AnnotationServerStorage(clientMock, settings);
+        // watch alert for message
+        const alertSpy = jest.spyOn(storage, "alert");
+        await storage.handleUpdateAnnotation(fakeAnnotation, fakeAnnotation);
+        expect(alertSpy).toHaveBeenCalledWith(
+            "Error updating annotation: 404 Not Found",
+            "error",
+        );
     });
 
     it("should respond to emitted deleteAnnotation event with handler", async () => {
@@ -228,16 +297,58 @@ describe("Event handlers", () => {
         );
         const storage = new AnnotationServerStorage(clientMock, settings);
 
-        fetchMock.mockResponseOnce(JSON.stringify({}), {
-            status: 200,
-            statusText: "ok",
-        });
+        fetchMock.mockResponses(
+            [
+                JSON.stringify({}),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            [
+                JSON.stringify({ resources: [] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+        );
 
         clientMock.emit("deleteAnnotation", fakeAnnotation);
         // should call adapter.delete
         // expect(fetchMock).toHaveBeenCalledWith(fakeAnnotation.id);
         // should decrement annotationCount
         expect(storage.annotationCount).toEqual(0);
+    });
+
+    it("should alert on delete error", async () => {
+        fetchMock.mockResponses(
+            // mock initial 200 response from load
+            [
+                JSON.stringify({ resources: [fakeAnnotation] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            // mock 404
+            [
+                JSON.stringify(fakeAnnotation),
+                {
+                    status: 404,
+                    statusText: "Not Found",
+                },
+            ],
+        );
+        // initialize the storage
+        const storage = new AnnotationServerStorage(clientMock, settings);
+        // watch alert for message
+        const alertSpy = jest.spyOn(storage, "alert");
+        await storage.handleDeleteAnnotation(fakeAnnotation);
+        expect(alertSpy).toHaveBeenCalledWith(
+            "Error deleting annotation: 404 Not Found",
+            "error",
+        );
     });
 });
 
@@ -354,5 +465,32 @@ describe("Create annotations with secondary motivation", () => {
             "dc:source": settings.sourceUri,
             motivation: ["sc:supplementing", "transcribing"],
         });
+    });
+});
+
+describe("Custom alert event", () => {
+    it("Should dispatch an event with passed message/status, target from settings", () => {
+        const storage = new AnnotationServerStorage(clientMock, settings);
+        const dispatchEventSpy = jest.spyOn(document, "dispatchEvent");
+        const message = "Test alert";
+        const status = "error";
+        storage.alert(message, status);
+        // Should dispatch the event "tahqiq-alert"
+        expect(dispatchEventSpy).toHaveBeenCalledWith(
+            new CustomEvent("tahqiq-alert", {
+                detail: { message, status, target: settings.target },
+            }),
+        );
+    });
+    it("Should use info as default status", () => {
+        const storage = new AnnotationServerStorage(clientMock, settings);
+        const dispatchEventSpy = jest.spyOn(document, "dispatchEvent");
+        const message = "Test alert";
+        storage.alert(message);
+        expect(dispatchEventSpy).toHaveBeenCalledWith(
+            new CustomEvent("tahqiq-alert", {
+                detail: { message, status: "info", target: settings.target },
+            }),
+        );
     });
 });

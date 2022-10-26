@@ -22,16 +22,45 @@ This project uses [Volta](https://volta.sh/) to pin Node and NPM versions.
 This plugin can be installed with NPM:
 
 ```sh
-npm install --save https://github.com/Princeton-CDH/annotorious-tahqiq.git
+npm install --save annotorious-tahqiq
+```
+
+or to install a specific version number:
+
+```sh
+npm install --save annotorious-tahqiq@1.0.1
 ```
 
 Then, to use alongside Annotorious and a storage plugin:
 
 ```js
+import {
+  TranscriptionEditor,
+  AnnotationServerStorage,
+} from "annotorious-tahqiq";
+
+// Initialize Annotorious with your settings
 const client = Annotorious(annotoriousSettings);
-const storagePlugin = StoragePlugin(); // An Annotorious plugin for storing annotations
-const annotationContainer = document.getElementById("annotation"); // An empty HTML element that the editor will be placed into.
-const tinyApiKey = "1234567890"; // Your TinyMCE editor API key (optional, can be omitted for testing purposes).
+
+// Initialize annotorious-tahqiq storage plugin
+const storageSettings = {
+    annotationEndpoint,   // Endpoint of the annotation store
+    target,               // Target for annotations (typically, a IIIF canvas)
+    manifest,             // IIIF manifest that target is a part of
+    csrf_token,           // CSRF token for communication with annotation store
+    secondaryMotivation,  // Optional secondary motivation for annotations
+                          // (primary is "sc:supplementing")
+    sourceUri,            // Optional "dc:source" URI attribute for annotations
+};
+const storagePlugin = AnnotationServerStorage(client, storageSettings);
+
+// Locate an empty HTML element that the editor will be placed into
+const annotationContainer = document.getElementById("annotation");
+
+// Your TinyMCE editor API key (optional, can be omitted for testing purposes)
+const tinyApiKey = "1234567890";
+
+// Initalize annotorious-tahqiq editor
 new TranscriptionEditor(client, storagePlugin, annotationContainer, tinyApiKey);
 ```
 
@@ -56,6 +85,13 @@ This plugin exposes the following CSS classes that can be used to style its elem
   - `.tahqiq-drag-target`: Annotation container receives this class when the user hovers a dragged annotation over it (i.e. this annotation container is "targeted")
   - `.tahqiq-drop-zone`: When running multiple instances of Tahqiq on the same page, this `div` will appear on an instance that has no annotations when the user begins dragging an annotation from another instance 
   - `.tahqiq-loading`: To compensate for network request timing, this class is added to all annotation containers after a drag and drop is completed, and removed when the network requests are finished
+
+
+### Events
+
+This plugin also raises custom events to report errors and other messages.
+
+- `tahqiq-alert`: A [`CustomEvent`](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent) with a `detail` object containing `message`, `status`, and `target`. `message` is an info, success, or error message; `status` is one of "info", "success", or "error"; and `target` is the target set in the settings for the storage plugin.
 
 ## Development
 
