@@ -213,19 +213,20 @@ class TranscriptionEditor {
      * @param {Annotation} selection Selected Annotorious annotation.
      */
     async handleCreateSelection(selection: Annotation) {
-        this.annotationContainer.append(
-            new AnnotationBlock({
-                annotation: selection,
-                editable: true,
-                onCancel: this.handleCancel.bind(this),
-                onClick: this.handleClickAnnotationBlock.bind(this),
-                onDelete: this.handleDeleteAnnotation.bind(this),
-                onDrag: this.handleDrag.bind(this),
-                onReorder: this.handleDropAnnotationBlock.bind(this),
-                onSave: this.handleSaveAnnotation.bind(this),
-                updateAnnotorious: this.anno.addAnnotation,
-            }),
-        );
+        const annotationBlock = new AnnotationBlock({
+            annotation: selection,
+            editable: true,
+            onCancel: this.handleCancel.bind(this),
+            onClick: this.handleClickAnnotationBlock.bind(this),
+            onDelete: this.handleDeleteAnnotation.bind(this),
+            onDrag: this.handleDrag.bind(this),
+            onReorder: this.handleDropAnnotationBlock.bind(this),
+            onSave: this.handleSaveAnnotation.bind(this),
+            updateAnnotorious: this.anno.addAnnotation,
+        });
+        this.annotationContainer.append(annotationBlock);
+        this.makeAllReadOnlyExcept(annotationBlock);
+        this.setAllInteractive(false);
     }
 
     /**
@@ -245,9 +246,6 @@ class TranscriptionEditor {
      * @param {Annotation} annotation Annotorious annotation.
      */
     handleSelectAnnotation(annotation: Annotation) {
-        // if we're aborting cancelation and this is not the uncanceled
-        // annotation, don't process the select
-
         // The user has selected an existing annotation
         // find the display element by annotation id and swith to edit mode
         const annotationBlock = document.querySelector(
@@ -280,37 +278,13 @@ class TranscriptionEditor {
     }
 
     /**
-     * Handler for annotorious cancel selection event
+     * Handler for annotorious cancel selection event (should only fire when user
+     * presses the escape key)
      *
      * @param {Annotation} selection the active selection being canceled
      */
     handleCancelSelection(selection: Annotation) {
-        // when Annotorious cancels an Annotation, we should too
-
-        // special case: reselecting a canceled annotation fires
-        // the cancel event; skip if annotation id matches
-        if (this.skipCancellation == selection.id) {
-            return;
-        }
-
-        // if a cancel is triggered but there are changes
-        // in the editor, give the user a chance to keep editing.
-        // NOTE: does not account for changes to label or annotation zone;
-        if (window.tinymce.activeEditor.isDirty()) {
-            if (confirm("You have unsaved changes. Do you want to keep editing?") == true) {
-                // if they click ok:
-                // - flag that we don't want to cancel this selection
-                this.skipCancellation = selection.id;
-                // - reselect so Annotorious knows selection is still active
-                this.anno.selectAnnotation(selection.id);
-                this.skipCancellation = "";
-                // return and don't process the cancelation
-                return;
-            }
-        }
-        // if there are no changes or user clicked cancel,
-        // continue on to process the cancel
-
+        // when Annotorious cancels an Annotation, we should too.
         // pass selection as CustomEvent.detail so we can cancel the right one
         // (e.g. if there are multiple annotations being edited on different canvases
         // at once)
@@ -573,7 +547,51 @@ class TranscriptionEditor {
     }
 
     /**
-     * Set draggability on or off for all blocks.
+     * Enable or disable all pointer events on the annotorious canvas in the current instance.
+     * If an annotorious rectangle is currently selected and editable, it will remain movable
+     * and resizable (pointer-events: all), even if enabled is set false.
+     * 
+     * @param {boolean} enabled Whether or not pointer events should be enabled
+     */
+    setAnnotoriousPointerEvents(enabled: boolean) {
+        // use query selectors to get the annotorious elements
+        const selectedAnnotoriousRectangle = this.anno._element.querySelector(
+            "g.a9s-annotation.editable.selected",
+        );
+        const osdCanvas = this.anno._element.querySelector("div.openseadragon-canvas");
+        const annotationLayer = this.anno._element.querySelector("svg.a9s-annotationlayer");
+
+        if (enabled) {
+            // enable pointer events on the canvas and annotation layer
+            osdCanvas.style.pointerEvents = "auto";
+            annotationLayer.style.pointerEvents = "all";
+            // enable pointer events on all annotorious rectangles
+            this.anno._element.querySelectorAll("g.a9s-annotation").forEach(
+                (el: SVGGElement) => {
+                    el.style.pointerEvents = "all";
+                },
+            );
+        } else {
+            // disable pointer events on the OSD and annotation layers to prevent
+            // accidental cancellation
+            osdCanvas.style.pointerEvents = "none";
+            annotationLayer.style.pointerEvents = "none";
+            // disable pointer events on all non-editable annotorious rectangles
+            this.anno._element.querySelectorAll("g.a9s-annotation:not(.editable)").forEach(
+                (el: SVGGElement) => {
+                    el.style.pointerEvents = "none";
+                },
+            );
+            if (selectedAnnotoriousRectangle) {
+                // allow the selected annotorious rectangle to be moved and resized
+                selectedAnnotoriousRectangle.style.pointerEvents = "all";
+            }
+        }
+    }
+
+    /**
+     * Set draggability on or off for all blocks; set pointer-events enabled or disabled on
+     * the Annotorious canvas.
      * 
      * @param {boolean} interactive Whether or not blocks should be draggable and clickable
      */
@@ -586,6 +604,7 @@ class TranscriptionEditor {
                     block.setClickable(interactive);
                 }
             });
+        this.setAnnotoriousPointerEvents(interactive);
     }
 }
 

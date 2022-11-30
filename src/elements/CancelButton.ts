@@ -39,6 +39,22 @@ class CancelButton extends HTMLButtonElement {
         // cancel the edit
         evt.stopPropagation(); // ensure parent onClick event isn't called
 
+        // if a cancel is triggered but there are changes
+        // in the editor, give the user a chance to keep editing.
+        // NOTE: does not account for changes to label or annotation zone.
+        if (window.tinymce.activeEditor.isDirty()) {
+            if (
+                confirm(
+                    "You have unsaved changes. Do you want to keep editing?",
+                ) == true
+            ) {
+                // if they click ok, return and don't process the cancelation
+                return;
+            }
+        }
+        // if there are no changes or user clicked cancel,
+        // continue on to process the cancel
+
         // if this was cancelled by annotorious, should dispatch CustomEvent with a Selection in the
         // CustomEvent.details targeting the same canvas as this.annotationBlock.annotation
         let thisSource = this.annotationBlock.annotation.target.source;
