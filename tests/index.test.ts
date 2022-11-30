@@ -55,6 +55,12 @@ osdCanvas.className = "openseadragon-canvas";
 clientMock._element.appendChild(osdCanvas);
 const annotationLayer = document.createElement("svg");
 annotationLayer.className = "a9s-annotationlayer";
+const annotoriousRectangle = document.createElement("g");
+annotoriousRectangle.className = "a9s-annotation";
+annotationLayer.appendChild(annotoriousRectangle);
+const selectedRectangle = document.createElement("g");
+selectedRectangle.classList.add("a9s-annotation", "editable", "selected");
+annotationLayer.appendChild(selectedRectangle);
 clientMock._element.appendChild(annotationLayer);
 
 // Mock the storage plugin
@@ -189,10 +195,6 @@ describe("Reload all positions", () => {
 });
 
 describe("Handle cancelSelection event", () => {
-    afterEach(() => {
-        jest.clearAllMocks();  // clear counts after each test
-    });
-
     it("Should emit cancel-annotation", () => {
         const editor = new TranscriptionEditor(
             clientMock, storageMock, container, "fakeTinyMceKey",
@@ -202,5 +204,29 @@ describe("Handle cancelSelection event", () => {
         expect(dispatchEventSpy).toHaveBeenCalledWith(
             new CustomEvent("cancel-annotation", { detail: fakeAnnotation }),
         );
+    });
+});
+
+describe("Set annotorious pointer events", () => {
+    it("Should set pointer-events to auto/all when enabled is set true", () => {
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
+        editor.setAnnotoriousPointerEvents(true);
+        expect(osdCanvas.style.pointerEvents).toBe("auto");
+        expect(annotationLayer.style.pointerEvents).toBe("all");
+        expect(annotoriousRectangle.style.pointerEvents).toBe("all");
+    });
+    it("Should set pointer-events to none when enabled is set false", () => {
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
+        editor.setAnnotoriousPointerEvents(false);
+        expect(osdCanvas.style.pointerEvents).toBe("none");
+        expect(annotationLayer.style.pointerEvents).toBe("none");
+        expect(annotoriousRectangle.style.pointerEvents).toBe("none");
+
+        // should set selected rectangle pointer-events to "all"
+        expect(selectedRectangle.style.pointerEvents).toBe("all");
     });
 });
