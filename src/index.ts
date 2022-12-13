@@ -227,6 +227,7 @@ class TranscriptionEditor {
         this.annotationContainer.append(annotationBlock);
         this.makeAllReadOnlyExcept(annotationBlock);
         this.setAllInteractive(false);
+        this.allowDragging(this.anno._element);
     }
 
     /**
@@ -244,14 +245,17 @@ class TranscriptionEditor {
      * and sets one annotation block to editable corresponding to the selected annotation.
      *
      * @param {Annotation} annotation Annotorious annotation.
+     * @param {SVGElement} element Annotation SVG shape element.
      */
-    handleSelectAnnotation(annotation: Annotation) {
+    handleSelectAnnotation(annotation: Annotation, element: HTMLElement) {
         // The user has selected an existing annotation
         // find the display element by annotation id and swith to edit mode
         const annotationBlock = document.querySelector(
             '[data-annotation-id="' + annotation.id + '"]',
         );
         if (annotationBlock && annotationBlock instanceof AnnotationBlock) {
+            // allow pointer events while the handles are being dragged
+            this.allowDragging(element);
             // make sure no other editor is active
             this.makeAllReadOnlyExcept(annotationBlock);
             annotationBlock.makeEditable();
@@ -587,6 +591,25 @@ class TranscriptionEditor {
                 selectedAnnotoriousRectangle.style.pointerEvents = "all";
             }
         }
+    }
+
+    /**
+     * When a selection is created or changed, this function will temporarily allow
+     * Annotorious pointer events while the selection's handles are being dragged.
+     *
+     * @param {HTMLElement} element The element containing the selection's handles.
+     */
+    allowDragging(element: HTMLElement) {
+        element.querySelectorAll("g.a9s-handle").forEach(
+            (handle) => {
+                handle.addEventListener(
+                    "mousedown", () => this.setAnnotoriousPointerEvents(true),
+                );
+                handle.addEventListener(
+                    "mouseup", () => this.setAnnotoriousPointerEvents(false),
+                );
+            },
+        );
     }
 
     /**

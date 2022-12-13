@@ -57,6 +57,9 @@ const annotationLayer = document.createElement("svg");
 annotationLayer.className = "a9s-annotationlayer";
 const annotoriousRectangle = document.createElement("g");
 annotoriousRectangle.className = "a9s-annotation";
+const handle = document.createElement("g");
+handle.className = "a9s-handle";
+annotoriousRectangle.appendChild(handle);
 annotationLayer.appendChild(annotoriousRectangle);
 const selectedRectangle = document.createElement("g");
 selectedRectangle.classList.add("a9s-annotation", "editable", "selected");
@@ -228,5 +231,29 @@ describe("Set annotorious pointer events", () => {
 
         // should set selected rectangle pointer-events to "all"
         expect(selectedRectangle.style.pointerEvents).toBe("all");
+    });
+});
+
+describe("Allow dragging selection handles", () => {
+    it("Should add event listeners to handles", () => {
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
+        const handleEventListenerSpy = jest.spyOn(handle, "addEventListener");
+        editor.allowDragging(annotoriousRectangle);
+        expect(handleEventListenerSpy).toHaveBeenCalledTimes(2);
+    });
+    it("Should respond to mousedown and mouseup with calls to setAnnotoriousPointerEvents", () => {
+        const editor = new TranscriptionEditor(
+            clientMock, storageMock, container, "fakeTinyMceKey",
+        );
+        const setPointerEventsSpy = jest.spyOn(editor, "setAnnotoriousPointerEvents");
+        editor.allowDragging(annotoriousRectangle);
+        let evt = new MouseEvent("mousedown");
+        handle.dispatchEvent(evt);
+        expect(setPointerEventsSpy).toHaveBeenCalled();
+        evt = new MouseEvent("mouseup");
+        handle.dispatchEvent(evt);
+        expect(setPointerEventsSpy).toHaveBeenCalledTimes(2);
     });
 });
