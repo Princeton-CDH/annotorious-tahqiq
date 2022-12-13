@@ -245,7 +245,7 @@ class TranscriptionEditor {
      * and sets one annotation block to editable corresponding to the selected annotation.
      *
      * @param {Annotation} annotation Annotorious annotation.
-     * @param {SVGElement} element Annotation SVG shape element.
+     * @param {HTMLElement} element Annotation SVG shape element.
      */
     handleSelectAnnotation(annotation: Annotation, element: HTMLElement) {
         // The user has selected an existing annotation
