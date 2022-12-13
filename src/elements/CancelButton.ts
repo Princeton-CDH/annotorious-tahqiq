@@ -48,7 +48,7 @@ class CancelButton extends HTMLButtonElement {
                     "You have unsaved changes. Do you want to keep editing?",
                 ) == true
             ) {
-                // if they click ok, return and don't process the cancelation
+                // if they click ok, return and don't process the cancellation
                 return;
             }
         }
