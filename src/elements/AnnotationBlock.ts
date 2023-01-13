@@ -18,6 +18,8 @@ class AnnotationBlock extends HTMLElement {
 
     labelElement: HTMLHeadingElement;
 
+    clickable: boolean;
+
     onCancel: () => void;
 
     onClick: (annotationBlock: AnnotationBlock) => void;
@@ -94,7 +96,11 @@ class AnnotationBlock extends HTMLElement {
         }
 
         // Set click event listener
+        this.clickable = true;
         this.addEventListener("click", () => {
+            // bail out if clicking disabled
+            if (! this.clickable) { return; }
+
             // if you click on this block, and it is in read-only mode, make editable
             if (!this.classList.contains("tahqiq-block-editor")) {
                 this.onClick(this);
@@ -264,6 +270,17 @@ class AnnotationBlock extends HTMLElement {
      */
     setDraggable(draggable: boolean): void {
         this.draggable = draggable;
+    }
+
+    /**
+     * Set whether or not this annotation block can be clicked
+     * to select. Should not be clickable when another block is
+     * being edited.
+     *
+     * @param {boolean} clickable Boolean indicating if this block is clickable
+     */
+    setClickable(clickable: boolean): void {
+        this.clickable = clickable;
     }
 }
 
