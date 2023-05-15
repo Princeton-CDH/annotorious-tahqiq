@@ -269,11 +269,15 @@ class AnnotationServerStorage {
      * @param {string} targetUri URI of the target to search for
      */
     async search(targetUri: string): Promise<void | SavedAnnotation[]> {
-        const { annotationEndpoint, sourceUri, manifest } = this.settings;
-        const sourceQuery = sourceUri ? `&source=${sourceUri}` : "";
-        const manifestQuery = manifest ? `&manifest=${manifest}` : "";
+        const { annotationEndpoint, sourceUri, manifest, secondaryMotivation } =
+            this.settings;
+        const sourceQ = sourceUri ? `&source=${sourceUri}` : "";
+        const manifestQ = manifest ? `&manifest=${manifest}` : "";
+        const motivationQ = secondaryMotivation
+            ? `&motivation=${secondaryMotivation}`
+            : "";
         const res = await fetch(
-            `${annotationEndpoint}search/?uri=${targetUri}${sourceQuery}${manifestQuery}`,
+            `${annotationEndpoint}search/?uri=${targetUri}${sourceQ}${manifestQ}${motivationQ}`,
             {
                 headers: {
                     Accept: "application/json",

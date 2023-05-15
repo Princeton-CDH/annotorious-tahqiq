@@ -49,10 +49,18 @@ class TranscriptionEditor {
      * @param {any} storage Storage plugin to save Annotorious annotations.
      * @param {HTMLElement} annotationContainer Existing HTML element that the editor will be
      * placed into.
+     * @param {string} textDirection Text direction of the TinyMCE rich text editor.
      * @param {string} tinyApiKey API key for the TinyMCE rich text editor.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    constructor(anno: any, storage: any, annotationContainer: HTMLElement, tinyApiKey?: string) {
+    constructor(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        anno: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        storage: any,
+        annotationContainer: HTMLElement,
+        textDirection?: string,
+        tinyApiKey?: string,
+    ) {
         this.anno = anno;
         this.storage = storage;
         // disable the default annotorious editor (headless mode)
@@ -112,7 +120,7 @@ class TranscriptionEditor {
                 plugins: "lists",
                 toolbar:
                     "language | numlist | strikethrough superscript | undo redo | ",
-                directionality: "rtl",
+                directionality: textDirection || "rtl",
                 formats: {
                     strikethrough: { inline: "del" },
                     // A custom format for insertion element
