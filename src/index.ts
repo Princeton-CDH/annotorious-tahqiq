@@ -238,6 +238,8 @@ class TranscriptionEditor {
         this.anno.cancelSelected();
         // make all annotations draggable
         this.setAllInteractive(true);
+        // raise global cancellation event
+        document.dispatchEvent(new CustomEvent("tahqiq-cancel"));
     }
 
     /**
