@@ -92,6 +92,8 @@ This plugin exposes the following CSS classes that can be used to style its elem
 This plugin also raises custom events to report errors and other messages.
 
 - `tahqiq-alert`: A [`CustomEvent`](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent) with a `detail` object containing `message`, `status`, and `target`. `message` is an info, success, or error message; `status` is one of "info", "success", or "error"; and `target` is the target set in the settings for the storage plugin.
+- `tahqiq-cancel`: A `CustomEvent` informing the consuming application that a cancellation has occurred.
+
 
 ## Development
 
