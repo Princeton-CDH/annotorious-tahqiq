@@ -35,6 +35,10 @@ describe("Element initialization", () => {
 
 describe("Click handler", () => {
     beforeEach(() => {
+        // mock just the portion of tinymce we care about
+        window.tinymce = { activeEditor: { isDirty: jest.fn() } };
+        // mock global confirm method
+        global.confirm = jest.fn();
         jest.clearAllMocks();
     });
     it("Should stop event propagation up to parent element", () => {
@@ -57,10 +61,53 @@ describe("Click handler", () => {
         cancelButton.dispatchEvent(evt);
         expect(annoBlock.makeReadOnly).toBeCalledWith(true);
     });
+    it("Should prompt user to confirm when there are changes to text", () => {
+        // simulate changes in editor
+        window.tinymce.activeEditor.isDirty.mockReturnValueOnce(true);
+        const cancelButton = new CancelButton(annoBlock);
+        const evt = new MouseEvent("click");
+        cancelButton.handleCancel(evt);
+        expect(global.confirm).toHaveBeenCalledWith(
+            "You have unsaved changes. Do you want to keep editing?",
+        );
+    });
+
+    it("Should not cancel annotation if there are changes and user wants to keep editing",
+        () => {
+            // simulate changes
+            window.tinymce.activeEditor.isDirty.mockReturnValueOnce(true);
+            // simulate user says yes, keep editing
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            jest.spyOn(global, "confirm" as any).mockReturnValueOnce(true);
+            const cancelButton = new CancelButton(annoBlock);
+            const evt = new MouseEvent("click");
+            cancelButton.handleCancel(evt);
+            // should not cancel
+            expect(annoBlock.onCancel).toBeCalledTimes(0);
+        },
+    );
+
+    it("Should cancel if there are changes and user wants to cancel", () => {
+        // simulate changes
+        window.tinymce.activeEditor.isDirty.mockReturnValueOnce(true);
+        // simulate user says no, realy cancel
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        jest.spyOn(global, "confirm" as any).mockReturnValueOnce(false);
+        const cancelButton = new CancelButton(annoBlock);
+        const evt = new MouseEvent("click");
+        cancelButton.handleCancel(evt);
+        // should cancel
+        expect(annoBlock.onCancel).toBeCalledTimes(1);
+    });
+
 });
 
 describe("Canceled Annotorious selection event handler", () => {
     beforeEach(() => {
+        // mock just the portion of tinymce we care about
+        window.tinymce = { activeEditor: { isDirty: jest.fn() } };
+        // mock global confirm method
+        global.confirm = jest.fn();
         jest.clearAllMocks();
     });
     it("Should execute cancellation if target matches annotation", () => {

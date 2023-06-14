@@ -74,6 +74,15 @@ describe("Click event", () => {
         expect(block.onClick).toHaveBeenCalledTimes(0);
         expect(block.makeEditable).toHaveBeenCalledTimes(0);
     });
+    it("Should do nothing if clickable is false", () => {
+        const block = new AnnotationBlock(props);
+        block.setClickable(false);
+
+        const evt = new MouseEvent("click");
+        block.dispatchEvent(evt);
+        expect(block.onClick).toHaveBeenCalledTimes(0);
+        expect(block.makeEditable).toHaveBeenCalledTimes(0);
+    });
 });
 
 describe("HTML encoding utility", () => {
@@ -99,4 +108,26 @@ describe("Drag event", () => {
         block.setDraggedOver(false);
         expect(block.classList.contains("tahqiq-drag-target")).toBe(false);
     });
+});
+
+describe("setDraggable", () => {
+
+    it("updates draggable when called", () => {
+        const block = new AnnotationBlock(props);
+        block.setDraggable(true);
+        expect(block.draggable).toEqual(true);
+        block.setDraggable(false);
+        expect(block.draggable).toEqual(false);
+    })
+});
+
+describe("setClickable", () => {
+
+    it("updates clickable when called", () => {
+        const block = new AnnotationBlock(props);
+        block.setClickable(false);
+        expect(block.clickable).toEqual(false);
+        block.setClickable(true);
+        expect(block.clickable).toEqual(true);
+    })
 });

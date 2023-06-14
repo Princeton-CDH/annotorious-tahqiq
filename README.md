@@ -49,7 +49,8 @@ const storageSettings = {
     manifest,             // IIIF manifest that target is a part of
     csrf_token,           // CSRF token for communication with annotation store
     secondaryMotivation,  // Optional secondary motivation for annotations
-                          // (primary is "sc:supplementing")
+                          // (primary is "sc:supplementing"). If supplied, will also
+                          // attempt to filter annotation endpoint on this motivation.
     sourceUri,            // Optional "dc:source" URI attribute for annotations
 };
 const storagePlugin = AnnotationServerStorage(client, storageSettings);
@@ -61,7 +62,14 @@ const annotationContainer = document.getElementById("annotation");
 const tinyApiKey = "1234567890";
 
 // Initalize annotorious-tahqiq editor
-new TranscriptionEditor(client, storagePlugin, annotationContainer, tinyApiKey);
+new TranscriptionEditor(
+    client,
+    storagePlugin,
+    annotationContainer,
+    tinyApiKey,
+    textDirection, // one of the two strings "rtl" or "ltr"; sets text direction
+                   // of the TinyMCE editor 
+);
 ```
 
 ### Styling
@@ -92,6 +100,8 @@ This plugin exposes the following CSS classes that can be used to style its elem
 This plugin also raises custom events to report errors and other messages.
 
 - `tahqiq-alert`: A [`CustomEvent`](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent) with a `detail` object containing `message`, `status`, and `target`. `message` is an info, success, or error message; `status` is one of "info", "success", or "error"; and `target` is the target set in the settings for the storage plugin.
+- `tahqiq-cancel`: A `CustomEvent` informing the consuming application that a cancellation has occurred.
+
 
 ## Development
 
