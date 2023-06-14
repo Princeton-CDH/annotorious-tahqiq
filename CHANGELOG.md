@@ -1,5 +1,16 @@
 # Change Log
 
+## 1.1.0
+
+Support for filtering search on motivation, improvements to cancellation.
+
+### Features
+
+- Add support for filtering search on secondaryMotivation
+- Add optional textDirection initialization parameter
+- Give user a chance to stop cancel event when there are changes
+- Raise a new custom event on cancel (tahqiq-cancel)
+
 ## 1.0.1
 
 Bug fixes and minor improvements.
