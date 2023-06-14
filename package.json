@@ -1,6 +1,6 @@
 {
     "name": "annotorious-tahqiq",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "description": "A custom Annotorious editor/view plugin ",
     "main": "./dist/index.js",
     "scripts": {
