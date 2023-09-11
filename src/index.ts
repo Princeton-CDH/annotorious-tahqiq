@@ -162,18 +162,18 @@ class TranscriptionEditor {
         rectangleTool.classList.add("tahqiq-tool", "rectangle-tool");
         const rectangleInput = document.createElement("input");
         rectangleInput.type = "radio";
-        rectangleTool.append(rectangleInput);
         const rectangleLabel = document.createElement("span");
         rectangleLabel.innerText = "Select a rectangle for image annotation";
+        rectangleTool.append(rectangleInput, rectangleLabel);
 
         // polygon image annotation tool
         const polygonTool = document.createElement("label");
         polygonTool.classList.add("tahqiq-tool", "polygon-tool");
         const polygonInput = document.createElement("input");
         polygonInput.type = "radio";
-        polygonTool.append(polygonInput);
         const polygonLabel = document.createElement("span");
         polygonLabel.innerText = "Select a polygon for image annotation";
+        polygonTool.append(polygonInput, polygonLabel);
 
         // set rectangle tool active by default
         rectangleInput.checked = true;
