@@ -57,6 +57,8 @@ const storagePlugin = AnnotationServerStorage(client, storageSettings);
 
 // Locate an empty HTML element that the editor will be placed into
 const annotationContainer = document.getElementById("annotation");
+// And an empty HTML fieldset element that toolbar tools will be placed into
+const toolbarContainer = document.getElementById("tahqiq-toolbar");
 
 // Your TinyMCE editor API key (optional, can be omitted for testing purposes)
 const tinyApiKey = "1234567890";
@@ -66,6 +68,7 @@ new TranscriptionEditor(
     client,
     storagePlugin,
     annotationContainer,
+    toolbarContainer,
     tinyApiKey,
     textDirection, // one of the two strings "rtl" or "ltr"; sets text direction
                    // of the TinyMCE editor 

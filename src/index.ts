@@ -33,6 +33,8 @@ class TranscriptionEditor {
     anno;
 
     annotationContainer: HTMLElement;
+    
+    toolbarContainer: HTMLFieldSetElement;
 
     storage;
 
@@ -49,6 +51,8 @@ class TranscriptionEditor {
      * @param {any} storage Storage plugin to save Annotorious annotations.
      * @param {HTMLElement} annotationContainer Existing HTML element that the editor will be
      * placed into.
+     * @param {HTMLFieldSetElement} toolbarContainer Existing HTML element that the toolbar inputs
+     * will be placed into.
      * @param {string} textDirection Text direction of the TinyMCE rich text editor.
      * @param {string} tinyApiKey API key for the TinyMCE rich text editor.
      */
@@ -58,6 +62,7 @@ class TranscriptionEditor {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         storage: any,
         annotationContainer: HTMLElement,
+        toolbarContainer: HTMLFieldSetElement,
         textDirection?: string,
         tinyApiKey?: string,
     ) {
@@ -110,6 +115,10 @@ class TranscriptionEditor {
             this.handleCancelSelection.bind(this),
         );
 
+        // initialize toolbar tools
+        this.toolbarContainer = toolbarContainer;
+        this.initializeToolbar();
+
         // Prepare tinyMCE editor custom element and config
         if (!customElements.get("tinymce-editor")) {
             Editor();
@@ -140,6 +149,61 @@ class TranscriptionEditor {
         if (!window.tinyApiKey) {
             window.tinyApiKey = tinyApiKey || "no-api-key";
         }
+    }
+
+    /**
+     * Instantiate the different tools for the toolbar, give them event listeners,
+     * and append them to the toolbar element.
+     */
+    initializeToolbar() {
+        // each tool is a label-wrapped radio input and span
+        // rectangle image annotation tool
+        const rectangleTool = document.createElement("label");
+        rectangleTool.classList.add("tahqiq-tool", "rectangle-tool");
+        const rectangleInput = document.createElement("input");
+        rectangleInput.type = "radio";
+        rectangleTool.append(rectangleInput);
+        const rectangleLabel = document.createElement("span");
+        rectangleLabel.innerText = "Select a rectangle for image annotation";
+
+        // polygon image annotation tool
+        const polygonTool = document.createElement("label");
+        polygonTool.classList.add("tahqiq-tool", "polygon-tool");
+        const polygonInput = document.createElement("input");
+        polygonInput.type = "radio";
+        polygonTool.append(polygonInput);
+        const polygonLabel = document.createElement("span");
+        polygonLabel.innerText = "Select a polygon for image annotation";
+
+        // set rectangle tool active by default
+        rectangleInput.checked = true;
+        rectangleTool.classList.add("active-tool");
+
+        // add event listener to rectangle input
+        rectangleInput.addEventListener("change", (e: Event) => {
+            if (e?.target instanceof HTMLInputElement && e.target.checked) {
+                // set drawing tool on annotorious
+                this.anno.setDrawingTool("rect");
+                // activate in UI, deactivate other tools
+                rectangleTool.classList.add("active-tool");
+                polygonInput.checked = false;
+                polygonTool.classList.remove("active-tool");
+            }
+        });
+
+        // add event listener to polygon input
+        polygonInput.addEventListener("change", (e: Event) => {
+            if (e?.target instanceof HTMLInputElement && e.target.checked) {
+                this.anno.setDrawingTool("polygon");
+                // activate in UI, deactivate other tools
+                polygonTool.classList.add("active-tool");
+                rectangleInput.checked = false;
+                rectangleTool.classList.remove("active-tool");
+            }
+        });
+
+        // append both inputs to toolbar container
+        this.toolbarContainer.append(rectangleTool, polygonTool);
     }
 
     /**
