@@ -58,6 +58,10 @@ const storagePlugin = AnnotationServerStorage(client, storageSettings);
 // Locate an empty HTML element that the editor will be placed into
 const annotationContainer = document.getElementById("annotation");
 
+// And an empty HTML fieldset element that toolbar tools will be placed into.
+// Currently, the provided tools are rectangle and polygon image annotation drawing tools.
+const toolbarContainer = document.getElementById("tahqiq-toolbar");
+
 // Your TinyMCE editor API key (optional, can be omitted for testing purposes)
 const tinyApiKey = "1234567890";
 
@@ -66,6 +70,7 @@ new TranscriptionEditor(
     client,
     storagePlugin,
     annotationContainer,
+    toolbarContainer,
     tinyApiKey,
     textDirection, // one of the two strings "rtl" or "ltr"; sets text direction
                    // of the TinyMCE editor 
@@ -83,11 +88,14 @@ This plugin exposes the following CSS classes that can be used to style its elem
   - `.tahqiq-label-editor`: Editable `h3` elements for block labels
   - `.tahqiq-body-display`: `div` element displaying the content of an annotation body
   - `.tahqiq-body-editor`: `div` element containing the TinyMCE editor for editing an annotation body
-- Buttons
+- Buttons and inputs
   - `.tahqiq-button`: All buttons (save, delete, cancel)
   - `.tahqiq-save-button`: Save button
   - `.tahqiq-delete-button`: Delete button
   - `.tahqiq-cancel-button`: Cancel button
+  - `.tahqiq-tool`: All tool `label` elements
+  - `.rectangle-tool`, `.polygon-tool`: Individual `label` elements for tools
+  - `.active-tool`: The currently active tool's `label` element
 - Drag and drop
   - `.tahqiq-drag-targetable`: Annotation container receives this class when the user begins dragging another annotation (i.e. this annotation container is "targetable")
   - `.tahqiq-drag-target`: Annotation container receives this class when the user hovers a dragged annotation over it (i.e. this annotation container is "targeted")

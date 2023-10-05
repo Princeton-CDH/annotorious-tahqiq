@@ -77,6 +77,7 @@ const storageMock = {
     alert: jest.fn(),
 };
 const container = document.createElement("annotation-block");
+const toolbarContainer = document.createElement("fieldset");
 
 describe("Plugin instantiation", () => {
     afterEach(() => {
@@ -85,20 +86,26 @@ describe("Plugin instantiation", () => {
 
     it("Should attach event listeners on initialization", () => {
         const addEventListenerSpy = jest.spyOn(document, "addEventListener");
-        new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
+        new TranscriptionEditor(
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
+        );
         expect(addEventListenerSpy).toBeCalledTimes(2);
         // should also attach even listeners to client events
         expect(clientMock.on).toBeCalledTimes(4);
     });
     it("Should define custom elements on initialization", () => {
-        new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
+        new TranscriptionEditor(
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
+        );
         expect(customElements.get("annotation-block")).toBeDefined();
         expect(customElements.get("save-button")).toBeDefined();
         expect(customElements.get("delete-button")).toBeDefined();
         expect(customElements.get("cancel-button")).toBeDefined();
     });
     it("Should bind handlers for annotorious events on initialization", () => {
-        new TranscriptionEditor(clientMock, storageMock, container, "fakeTinyMceKey");
+        new TranscriptionEditor(
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
+        );
         expect(clientMock.on).toBeCalledTimes(4);
         // not sure how to compare bound functions;
         // collect the first arguments of all calls to check bound signals
@@ -111,10 +118,33 @@ describe("Plugin instantiation", () => {
 
 });
 
+describe("Initialize toolbar", () => {
+    it("Should add rectangle tool", () => {
+        new TranscriptionEditor(
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
+        );
+        const rectangleTool = toolbarContainer.querySelector("label.rectangle-tool");
+        expect(rectangleTool).toBeInstanceOf(HTMLLabelElement);
+        // should be set active by default
+        expect(rectangleTool?.classList?.contains("active-tool")).toBe(true);
+        expect(rectangleTool?.querySelector("input")?.checked).toBe(true);
+    });
+    it("Should add polygon tool", () => {
+        new TranscriptionEditor(
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
+        );
+        const polygonTool = toolbarContainer.querySelector("label.polygon-tool");
+        expect(polygonTool).toBeInstanceOf(HTMLLabelElement);
+        // should NOT be set active by default
+        expect(polygonTool?.classList?.contains("active-tool")).toBe(false);
+        expect(polygonTool?.querySelector("input")?.checked).toBe(false);
+    });
+});
+
 describe("Set annotations draggable", () => {
     it("Should change the draggable property on all annotation blocks", () => {
         const editor = new TranscriptionEditor(
-            clientMock, storageMock, container, "fakeTinyMceKey",
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
         );
         editor.handleAnnotationsLoaded(
             new CustomEvent("annotations-loaded", {
@@ -146,7 +176,7 @@ describe("Update annotations sequence", () => {
     it("Should set schema:position on all passed annotations to their list indices", async () => {
         const updateSpy = jest.spyOn(storageMock, "update");
         const editor = new TranscriptionEditor(
-            clientMock, storageMock, container, "fakeTinyMceKey",
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
         );
         await editor.updateSequence(fakeAnnotationList);
         // should only be called 3 times, as only 3/4 need to be updated
@@ -163,7 +193,7 @@ describe("Update annotations sequence", () => {
     });
     it("Should set all draggability to false and reload all annotations", async () => {
         const editor = new TranscriptionEditor(
-            clientMock, storageMock, container, "fakeTinyMceKey",
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
         );
         const draggabilitySpy = jest.spyOn(editor, "setAllInteractive");
         storageMock.loadAnnotations.mockClear();
@@ -180,7 +210,7 @@ describe("Reload all positions", () => {
 
     it("Should retrieve annotations from storage, then run updateSequence", async () => {
         const editor = new TranscriptionEditor(
-            clientMock, storageMock, container, "fakeTinyMceKey",
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
         );
         const loadAnnotationsSpy = jest.spyOn(storageMock, "loadAnnotations");
         const updateSequenceSpy = jest.spyOn(editor, "updateSequence");
@@ -200,7 +230,7 @@ describe("Reload all positions", () => {
 describe("Handle cancelSelection event", () => {
     it("Should emit cancel-annotation", () => {
         const editor = new TranscriptionEditor(
-            clientMock, storageMock, container, "fakeTinyMceKey",
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
         );
         const dispatchEventSpy = jest.spyOn(document, "dispatchEvent");
         editor.handleCancelSelection(fakeAnnotation);
@@ -213,7 +243,7 @@ describe("Handle cancelSelection event", () => {
 describe("Set annotorious pointer events", () => {
     it("Should set pointer-events to auto/all when enabled is set true", () => {
         const editor = new TranscriptionEditor(
-            clientMock, storageMock, container, "fakeTinyMceKey",
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
         );
         editor.setAnnotoriousPointerEvents(true);
         expect(osdCanvas.style.pointerEvents).toBe("auto");
@@ -222,7 +252,7 @@ describe("Set annotorious pointer events", () => {
     });
     it("Should set pointer-events to none when enabled is set false", () => {
         const editor = new TranscriptionEditor(
-            clientMock, storageMock, container, "fakeTinyMceKey",
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
         );
         editor.setAnnotoriousPointerEvents(false);
         expect(osdCanvas.style.pointerEvents).toBe("none");
@@ -237,7 +267,7 @@ describe("Set annotorious pointer events", () => {
 describe("Allow dragging selection handles", () => {
     it("Should add event listeners to handles", () => {
         const editor = new TranscriptionEditor(
-            clientMock, storageMock, container, "fakeTinyMceKey",
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
         );
         const handleEventListenerSpy = jest.spyOn(handle, "addEventListener");
         editor.allowDragging(annotoriousRectangle);
@@ -245,7 +275,7 @@ describe("Allow dragging selection handles", () => {
     });
     it("Should respond to mousedown and mouseup with calls to setAnnotoriousPointerEvents", () => {
         const editor = new TranscriptionEditor(
-            clientMock, storageMock, container, "fakeTinyMceKey",
+            clientMock, storageMock, container, toolbarContainer, "fakeTinyMceKey",
         );
         const setPointerEventsSpy = jest.spyOn(editor, "setAnnotoriousPointerEvents");
         editor.allowDragging(annotoriousRectangle);
