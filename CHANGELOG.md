@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.2.0
+
+Support for polygonal annotation.
+
+### Features
+
+- Add toolbar with rectangle/polygon annotation tools
+
 ## 1.1.0
 
 Support for filtering search on motivation, improvements to cancellation.
