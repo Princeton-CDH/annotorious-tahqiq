@@ -11,8 +11,10 @@ interface Annotation {
     "dc:source"?: string;
     id?: string;
     motivation?: string | string[];
+    partOf?: string;
     "schema:position"?: number | null;
     target: Target;
+    textGranularity?: string;
     type: string;
 }
 

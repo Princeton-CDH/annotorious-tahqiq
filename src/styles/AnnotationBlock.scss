@@ -38,10 +38,49 @@
         background-color: white;
         color: black;
         min-height: 3em;
-        border: 1px solid #ccc;;
-        &[contenteditable=true]:empty:not(:focus):before {
+        border: 1px solid #ccc;
+        &[contenteditable="true"]:empty:not(:focus):before {
             content: attr(data-placeholder);
             color: gray;
         }
     }
+}
+
+// Line group styling for line-level annotation editing
+.tahqiq-line-group {
+    border: 1px solid rgba(128, 128, 128, 0.5);
+    margin: 0 0 1rem;
+    counter-reset: linecounter;
+    // styling for a line in a group
+    .tahqiq-block-display {
+        border: none;
+        padding: 0;
+        margin: 0;
+
+        counter-increment: linecounter;
+        display: flex;
+        align-items: center;
+        &:hover {
+            background-color: rgba(69, 175, 214, 0.5);
+            cursor: pointer;
+        }
+        &::before {
+            content: counter(linecounter);
+            flex-basis: 2rem;
+        }
+    }
+    .tahqiq-block-editor {
+        // editor should also increment the line count
+        counter-increment: linecounter;
+    }
+    // Prevent cursor/hover effects on other lines when an editor is open
+    &:has(.tahqiq-block-editor) .tahqiq-block-display:hover {
+        background-color: transparent;
+        cursor: default;
+    }
+}
+
+// Remove margins on labels in line-level editor mode
+annotation-label.tahqiq-block-display {
+    margin: 0;
 }

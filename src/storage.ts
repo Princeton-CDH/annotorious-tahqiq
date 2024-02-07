@@ -55,7 +55,15 @@ class AnnotationServerStorage {
             const annotations: void | SavedAnnotation[] = await this.search(
                 this.settings.target,
             );
-            await this.anno.setAnnotations(annotations);
+            if (this.settings.lineMode) {
+                // in line-by-line editing mode, only render line-level annotations in annotorious
+                await this.anno.setAnnotations(
+                    annotations?.filter((a) => a.textGranularity === "line"),
+                );
+            } else {
+                // otherwise render block-level annotations
+                await this.anno.setAnnotations(annotations);
+            }
             if (annotations instanceof Array) {
                 this.annotationCount = annotations.length;
             }
@@ -149,6 +157,28 @@ class AnnotationServerStorage {
             );
             // redisplay the updated annotation in annotorious
             this.anno.addAnnotation(updatedAnnotation);
+            // reload annotations from storage (for post-save effects e.g. html sanitization)
+            await this.loadAnnotations();
+            this.alert("Annotation saved", "success");
+            return await Promise.resolve(updatedAnnotation);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+            this.alert(err.message, "error");
+        }
+    }
+
+    /**
+     * Update the annotation in the store only (i.e. when image annotation editing is disabled).
+     *
+     * @param {SavedAnnotation} annotation Updated annotation.
+     */
+    async handleUpdateAnnotationInStore(
+        annotation: SavedAnnotation,
+    ): Promise<Annotation | void> {
+        try {
+            const updatedAnnotation: SavedAnnotation = await this.update(
+                annotation,
+            );
             // reload annotations from storage (for post-save effects e.g. html sanitization)
             await this.loadAnnotations();
             this.alert("Annotation saved", "success");
