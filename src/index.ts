@@ -299,6 +299,8 @@ class TranscriptionEditor {
                         // create the line group element and append the group label
                         const lineGroup = document.createElement("DIV");
                         lineGroup.classList.add("tahqiq-line-group");
+                        // allow editing the label associated with the group of line-level
+                        // annotations, since the group itself is not editable, only the lines
                         this.annotationContainer.append(
                             new AnnotationLabel({
                                 annotation: group,
@@ -310,7 +312,7 @@ class TranscriptionEditor {
                             }),
                             lineGroup,
                         );
-                        // create the editable line blocks
+                        // create the editable line-level content blocks
                         this.createBlocks(lines, lineGroup);
                     });
                 } else {

@@ -5,8 +5,10 @@ import { SaveButton } from "./SaveButton";
 import "../styles/AnnotationBlock.scss";
 
 /**
- * HTML div element associated with an annotation, which can be made editable to udpate
- * its associated annotation.
+ * HTML div element associated with a block-level annotation grouping a list of line-level
+ * annotations. Can be made editable to udpate its associated annotation's label ONLY.
+ * Block-level annotations that group line-level annotations do not have editable content
+ * themselves, only editable labels.
  */
 class AnnotationLabel extends HTMLElement {
     annotation: Annotation;
@@ -24,11 +26,11 @@ class AnnotationLabel extends HTMLElement {
     onSave: (label: AnnotationLabel) => Promise<void>;
 
     /**
-     * Instantiate an annotation block.
+     * Instantiate an annotation label.
      *
-     * @param {object} props Properties passed to this annotation block.
-     * @param {Annotation} props.annotation Annotation to associate with this annotation block.
-     * @param {boolean} props.editable True if this annotation block should be editable,
+     * @param {object} props Properties passed to this annotation label.
+     * @param {Annotation} props.annotation Annotation to associate with this annotation label.
+     * @param {boolean} props.editable True if this annotation label should be editable,
      * otherwise false.
      * @param {Function} props.onCancel Cancel annotation handler function.
      * @param {Function} props.onClick Click handler function.
@@ -79,7 +81,7 @@ class AnnotationLabel extends HTMLElement {
                 return;
             }
 
-            // if you click on this block, and it is in read-only mode, make editable
+            // if you click on this label, and it is in read-only mode, make editable
             if (!this.classList.contains("tahqiq-block-editor")) {
                 this.onClick(this);
                 // selection event not fired in this case, so make editable
@@ -94,7 +96,7 @@ class AnnotationLabel extends HTMLElement {
     }
 
     /**
-     * Makes an existing annotation block editable by adding TinyMCE
+     * Makes an existing annotation label editable by adding TinyMCE
      * and adding Save, Cancel, and Delete buttons.
      */
     makeEditable(): void {
@@ -112,9 +114,9 @@ class AnnotationLabel extends HTMLElement {
     }
 
     /**
-     * Converts an annotation block that has been made editable back to display format.
+     * Converts an annotation label that has been made editable back to display format.
      *
-     * @param {boolean} updateAnnotation True if this annotation block's annotation should be
+     * @param {boolean} updateAnnotation True if this annotation label's annotation should be
      * updated in Annotorious, otherwise false.
      */
     makeReadOnly(updateAnnotation?: boolean): void {
@@ -141,7 +143,7 @@ class AnnotationLabel extends HTMLElement {
     }
 
     /**
-     * Update the annotation on this annotation block.
+     * Update the annotation on this annotation label.
      *
      * @param {Annotation} annotation Updated annotation.
      */
@@ -150,7 +152,7 @@ class AnnotationLabel extends HTMLElement {
     }
 
     /**
-     * Set the TinyMCE editor id on this annotation block.
+     * Set the TinyMCE editor id on this annotation label.
      *
      * @param {any} editor The TinyMCE editor instance
      */
@@ -160,11 +162,11 @@ class AnnotationLabel extends HTMLElement {
     }
 
     /**
-     * Set whether or not this annotation block can be clicked
-     * to select. Should not be clickable when another block is
+     * Set whether or not this annotation label can be clicked
+     * to select. Should not be clickable when another block or label is
      * being edited.
      *
-     * @param {boolean} clickable Boolean indicating if this block is clickable
+     * @param {boolean} clickable Boolean indicating if this label is clickable
      */
     setClickable(clickable: boolean): void {
         this.clickable = clickable;
