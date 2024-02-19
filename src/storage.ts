@@ -1,4 +1,4 @@
-import type { Annotation, SavedAnnotation } from "./types/Annotation";
+import { TextGranularity, type Annotation, type SavedAnnotation } from "./types/Annotation";
 import type { Source } from "./types/Source";
 import type { Settings } from "./types/Settings";
 
@@ -58,7 +58,7 @@ class AnnotationServerStorage {
             if (this.settings.lineMode) {
                 // in line-by-line editing mode, only render line-level annotations in annotorious
                 await this.anno.setAnnotations(
-                    annotations?.filter((a) => a.textGranularity === "line"),
+                    annotations?.filter((a) => a.textGranularity === TextGranularity.LINE),
                 );
             } else {
                 // otherwise render block-level annotations

@@ -2,7 +2,7 @@ import { AnnotationBlock } from "./elements/AnnotationBlock";
 import { CancelButton } from "./elements/CancelButton";
 import { DeleteButton } from "./elements/DeleteButton";
 import { SaveButton } from "./elements/SaveButton";
-import { Annotation } from "./types/Annotation";
+import { Annotation, TextGranularity } from "./types/Annotation";
 import { Target } from "./types/Target";
 import { Editor } from "@tinymce/tinymce-webcomponent";
 import AnnotationServerStorage from "./storage";
@@ -285,7 +285,7 @@ class TranscriptionEditor {
                         groupBy(
                             currentAnnotations.filter(
                                 (anno: Annotation) =>
-                                    anno.textGranularity === "line",
+                                    anno.textGranularity === TextGranularity.LINE,
                             ),
                             (anno: Annotation) => anno.partOf || "group",
                         ),
@@ -293,7 +293,7 @@ class TranscriptionEditor {
                         // locate the associated block-level annotation by ID
                         const group = currentAnnotations.find(
                             (anno: Annotation) =>
-                                anno.textGranularity === "block" &&
+                                anno.textGranularity === TextGranularity.BLOCK &&
                                 anno.id === blockId,
                         );
                         // create the line group element and append the group label
