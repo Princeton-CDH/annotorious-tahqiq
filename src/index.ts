@@ -139,7 +139,7 @@ class TranscriptionEditor {
             Editor();
         }
         if (!window.tinyConfig) {
-            // hide numberded list in line-level editor mode
+            // hide numbered list in line-level editor mode
             const toolbar = this.storage.settings?.lineMode
                 ? "language | strikethrough superscript | undo redo | "
                 : "language | numlist | strikethrough superscript | undo redo | ";
