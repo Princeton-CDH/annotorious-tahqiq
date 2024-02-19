@@ -1,4 +1,4 @@
-import { Annotation } from "../types/Annotation";
+import { Annotation, TextGranularity } from "../types/Annotation";
 import { CancelButton } from "./CancelButton";
 import { DeleteButton } from "./DeleteButton";
 import { SaveButton } from "./SaveButton";
@@ -88,7 +88,10 @@ class AnnotationBlock extends HTMLElement {
             this.labelElement.innerHTML = this.annotation.body[0].label || "";
             this.bodyElement.innerHTML = this.annotation.body[0].value;
         }
-        this.append(this.labelElement);
+        if (this.annotation.textGranularity !== TextGranularity.LINE) {
+            // line-level annotations do not have labels
+            this.append(this.labelElement);
+        }
         this.append(this.bodyElement);
 
         if (this.annotation.id) {

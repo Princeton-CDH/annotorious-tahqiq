@@ -2,6 +2,14 @@ import type { Body } from "./Body";
 import type { Target } from "./Target";
 
 /**
+ * Constants for text granularity.
+ */
+enum TextGranularity {
+    LINE = "line",
+    BLOCK = "block",
+}
+
+/**
  * W3C Annotation (does not meet the full specification) of the type used by Annotorious.
  * https://www.w3.org/TR/annotation-model/#annotations
  */
@@ -11,8 +19,10 @@ interface Annotation {
     "dc:source"?: string;
     id?: string;
     motivation?: string | string[];
+    partOf?: string;
     "schema:position"?: number | null;
     target: Target;
+    textGranularity?: TextGranularity;
     type: string;
 }
 
@@ -23,4 +33,4 @@ interface SavedAnnotation extends Annotation {
     id: string;
 }
 
-export { Annotation, SavedAnnotation };
+export { Annotation, SavedAnnotation, TextGranularity };
