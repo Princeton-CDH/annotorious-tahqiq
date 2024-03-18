@@ -163,6 +163,8 @@ class AnnotationServerStorage {
             return await Promise.resolve(updatedAnnotation);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
+            // in case of an error, ensure annotation gets re-selected while editor still open
+            this.anno.selectAnnotation(annotation);
             this.alert(err.message, "error");
         }
     }
@@ -198,13 +200,15 @@ class AnnotationServerStorage {
      */
     async handleDeleteAnnotation(annotation: SavedAnnotation): Promise<void> {
         try {
-            this.setAnnotationCount(this.annotationCount - 1);
             await this.delete(annotation);
+            this.setAnnotationCount(this.annotationCount - 1);
             await this.loadAnnotations();
             this.alert("Annotation deleted", "success");
             return await Promise.resolve();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
+            // in case of an error, ensure annotation gets re-selected while editor still open
+            this.anno.selectAnnotation(annotation);
             this.alert(err.message, "error");
         }
     }
@@ -256,11 +260,18 @@ class AnnotationServerStorage {
                 Accept: "application/json",
                 "Content-Type": "application/json",
                 "X-CSRFToken": this.settings.csrf_token,
+                // ensure match with the previously fetched ETag
+                "If-Match": annotation.etag,
             },
             method: "POST",
         });
         if (res.ok) {
             return res.json();
+        } else if (res.status === 412) {
+            throw new Error(
+                `Error: Annotation was modified by another user while you were working.
+                Refresh the page to get the latest version, then make your changes.`,
+            );
         } else {
             throw new Error(
                 `Error updating annotation: ${res.status} ${res.statusText}`,
@@ -280,11 +291,18 @@ class AnnotationServerStorage {
                 Accept: "application/json",
                 "Content-Type": "application/json",
                 "X-CSRFToken": this.settings.csrf_token,
+                // ensure match with the previously fetched ETag
+                "If-Match": annotation.etag,
             },
             method: "DELETE",
         });
         if (res.ok) {
             return res;
+        } else if (res.status === 412) {
+            throw new Error(
+                `Error: Annotation was modified by another user.
+                Refresh the page to get the latest version, then delete it.`,
+            );
         } else {
             throw new Error(
                 `Error deleting annotation: ${res.status} ${res.statusText}`,

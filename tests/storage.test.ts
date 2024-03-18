@@ -10,6 +10,7 @@ const clientMock = {
     addAnnotation: jest.fn(),
     setAnnotations: jest.fn(),
     removeAnnotation: jest.fn(),
+    selectAnnotation: jest.fn(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     on: jest.fn().mockImplementation((evtName: string, handler: () => any) => {
         // add name/handler pair to events array
@@ -36,6 +37,7 @@ const settings = {
 // a fake annotation
 let fakeAnnotation = {
     id: "someId",
+    etag: "abcd1234",
     "@context": "fakeContext",
     body: { value: "fake" },
     target: { source: "fakesource" },
@@ -57,6 +59,7 @@ describe("Storage instantiation", () => {
         );
         fakeAnnotation = {
             id: "someId",
+            etag: "abcd1234",
             "@context": "fakeContext",
             body: { value: "fake" },
             target: { source: "fakesource" },
@@ -113,6 +116,7 @@ describe("Event handlers", () => {
         fetchMock.resetMocks();
         fakeAnnotation = {
             id: "someId",
+            etag: "abcd1234",
             "@context": "fakeContext",
             body: { value: "fake" },
             target: { source: "fakesource" },
@@ -286,6 +290,39 @@ describe("Event handlers", () => {
         );
     });
 
+    it("should give specific alert on 412", async () => {
+        fetchMock.mockResponses(
+            // mock initial 200 response from load
+            [
+                JSON.stringify({ resources: [fakeAnnotation] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            // mock 412
+            [
+                JSON.stringify(fakeAnnotation),
+                {
+                    status: 412,
+                    statusText: "Precondition Failed",
+                },
+            ],
+        );
+        // initialize the storage
+        const storage = new AnnotationServerStorage(clientMock, settings);
+        // watch alert for message
+        const alertSpy = jest.spyOn(storage, "alert");
+        await storage.handleUpdateAnnotation(fakeAnnotation, fakeAnnotation);
+        expect(alertSpy).toHaveBeenCalledWith(
+            `Error: Annotation was modified by another user while you were working.
+                Refresh the page to get the latest version, then make your changes.`,
+            "error",
+        );
+        // should reselect annotation
+        expect(storage.anno.selectAnnotation).toHaveBeenCalled();
+    });
+
     it("should respond to emitted deleteAnnotation event with handler", async () => {
         // initialize the storage
         fetchMock.mockResponseOnce(
@@ -350,6 +387,39 @@ describe("Event handlers", () => {
             "error",
         );
     });
+
+    it("should give specific alert on 412", async () => {
+        fetchMock.mockResponses(
+            // mock initial 200 response from load
+            [
+                JSON.stringify({ resources: [fakeAnnotation] }),
+                {
+                    status: 200,
+                    statusText: "ok",
+                },
+            ],
+            // mock 412
+            [
+                JSON.stringify(fakeAnnotation),
+                {
+                    status: 412,
+                    statusText: "Precondition Failed",
+                },
+            ],
+        );
+        // initialize the storage
+        const storage = new AnnotationServerStorage(clientMock, settings);
+        // watch alert for message
+        const alertSpy = jest.spyOn(storage, "alert");
+        await storage.handleDeleteAnnotation(fakeAnnotation);
+        expect(alertSpy).toHaveBeenCalledWith(
+            `Error: Annotation was modified by another user.
+                Refresh the page to get the latest version, then delete it.`,
+            "error",
+        );
+        // should reselect annotation
+        expect(storage.anno.selectAnnotation).toHaveBeenCalled();
+    });
 });
 
 describe("Load annotations", () => {
@@ -360,6 +430,7 @@ describe("Load annotations", () => {
         fetchMock.resetMocks();
         fakeAnnotation = {
             id: "someId",
+            etag: "abcd1234",
             "@context": "fakeContext",
             body: { value: "fake" },
             target: { source: "fakesource" },
@@ -417,6 +488,7 @@ describe("Create annotations with secondary motivation", () => {
         fetchMock.resetMocks();
         fakeAnnotation = {
             id: "someId",
+            etag: "abcd1234",
             "@context": "fakeContext",
             body: { value: "fake" },
             target: { source: "fakesource" },
