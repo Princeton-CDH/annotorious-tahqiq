@@ -27,10 +27,11 @@ interface Annotation {
 }
 
 /**
- * Saved W3C Annotation, which will have received an ID from the annotation store.
+ * Saved W3C Annotation, which will have received an ID and etag from the annotation store.
  */
 interface SavedAnnotation extends Annotation {
     id: string;
+    etag: string;
 }
 
 export { Annotation, SavedAnnotation, TextGranularity };

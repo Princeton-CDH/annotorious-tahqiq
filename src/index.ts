@@ -462,15 +462,15 @@ class TranscriptionEditor {
                     "error",
                 );
             } else {
+                // calling removeAnnotation doesn't fire the deleteAnnotation event,
+                // so we have to trigger the deletion explicitly (also avoids race condition!)
+                await this.storage.delete(annotationBlock.annotation);
                 // remove the highlight zone from the image
                 this.anno.removeAnnotation(annotationBlock.annotation.id);
                 // decrement annotation count
                 this.storage.setAnnotationCount(this.storage.annotationCount - 1);
                 // remove the edit/display displayBlock
                 annotationBlock.remove();
-                // calling removeAnnotation doesn't fire the deleteAnnotation event,
-                // so we have to trigger the deletion explicitly (also avoids race condition!)
-                await this.storage.delete(annotationBlock.annotation);
                 // reload positions of all annotation blocks except this one
                 const blocks = this.annotationContainer.querySelectorAll(".tahqiq-block-display");
                 const annotations = Array.from(blocks).map((block) => {
