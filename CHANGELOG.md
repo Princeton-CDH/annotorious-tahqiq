@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.3.0
+
+### Features
+
+- Support grouping and editing of line-level annotations using textGranularity
+- Support ETag/If-Match headers to prevent mid-air collisions
+
 ## 1.2.0
 
 Support for polygonal annotation.
