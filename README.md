@@ -52,6 +52,9 @@ const storageSettings = {
                           // (primary is "sc:supplementing"). If supplied, will also
                           // attempt to filter annotation endpoint on this motivation.
     sourceUri,            // Optional "dc:source" URI attribute for annotations
+    lineMode,             // Boolean to enable "line mode", which allows grouping
+                          // and editing of line-level annotations with the
+                          // "textGranularity" property
 };
 const storagePlugin = AnnotationServerStorage(client, storageSettings);
 
@@ -88,6 +91,8 @@ This plugin exposes the following CSS classes that can be used to style its elem
   - `.tahqiq-label-editor`: Editable `h3` elements for block labels
   - `.tahqiq-body-display`: `div` element displaying the content of an annotation body
   - `.tahqiq-body-editor`: `div` element containing the TinyMCE editor for editing an annotation body
+  - `.tahqiq-line-group`: `div` element grouping multiple line-level annotations
+  - `.tahqiq-line-group-label`: `h3` element labeling a group of multiple line-level annotations
 - Buttons and inputs
   - `.tahqiq-button`: All buttons (save, delete, cancel)
   - `.tahqiq-save-button`: Save button

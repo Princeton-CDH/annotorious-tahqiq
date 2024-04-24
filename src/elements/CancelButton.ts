@@ -1,21 +1,23 @@
 import { AnnotationBlock } from "./AnnotationBlock";
+import { AnnotationLabel } from "./AnnotationLabel";
 import "@ungap/custom-elements";
 
 /**
  * A button that cancels editing or creating an annotation on click.
  */
 class CancelButton extends HTMLButtonElement {
-    annotationBlock: AnnotationBlock;
+    annotationElement: AnnotationBlock | AnnotationLabel;
 
     /**
      * Creates a cancel button.
      *
-     * @param {AnnotationBlock} annotationBlock Annotation block associated with this cancel button.
+     * @param {AnnotationBlock | AnnotationLabel} annotationElement Annotation element associated
+     * with this cancel button.
      */
-    constructor(annotationBlock: AnnotationBlock) {
+    constructor(annotationElement: AnnotationBlock | AnnotationLabel) {
         super();
 
-        this.annotationBlock = annotationBlock;
+        this.annotationElement = annotationElement;
 
         // Set class and content
         this.classList.add("tahqiq-button", "tahqiq-cancel-button");
@@ -42,7 +44,7 @@ class CancelButton extends HTMLButtonElement {
         // if a cancel is triggered but there are changes
         // in the editor, give the user a chance to keep editing.
         // NOTE: does not account for changes to label or annotation zone.
-        if (window.tinymce.activeEditor.isDirty()) {
+        if (window.tinymce?.activeEditor?.isDirty()) {
             if (
                 confirm(
                     "You have unsaved changes. Do you want to keep editing?",
@@ -56,8 +58,8 @@ class CancelButton extends HTMLButtonElement {
         // continue on to process the cancel
 
         // if this was cancelled by annotorious, should dispatch CustomEvent with a Selection in the
-        // CustomEvent.details targeting the same canvas as this.annotationBlock.annotation
-        let thisSource = this.annotationBlock.annotation.target.source;
+        // CustomEvent.details targeting the same canvas as this.annotationElement.annotation
+        let thisSource = this.annotationElement.annotation.target.source;
         if (typeof thisSource !== "string") thisSource = thisSource.id;
         const cancelledByAnnotorious =
             evt instanceof CustomEvent &&
@@ -69,13 +71,13 @@ class CancelButton extends HTMLButtonElement {
         // if this was a click event or it was cancelled by annotorious, cancel!
         if (!(evt instanceof CustomEvent) || cancelledByAnnotorious) {
             // clear the selection from the image
-            this.annotationBlock.onCancel();
-            if (this.annotationBlock.annotation.id) {
+            this.annotationElement.onCancel();
+            if (this.annotationElement.annotation.id) {
                 // if annotation was saved previously, restore and make read only
-                this.annotationBlock.makeReadOnly(true);
+                this.annotationElement.makeReadOnly(true);
             } else {
                 // if this was a new annotation, remove the displayBlock
-                this.annotationBlock.remove();
+                this.annotationElement.remove();
             }
         }
     }

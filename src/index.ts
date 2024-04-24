@@ -2,13 +2,14 @@ import { AnnotationBlock } from "./elements/AnnotationBlock";
 import { CancelButton } from "./elements/CancelButton";
 import { DeleteButton } from "./elements/DeleteButton";
 import { SaveButton } from "./elements/SaveButton";
-import { Annotation } from "./types/Annotation";
+import { Annotation, TextGranularity } from "./types/Annotation";
 import { Target } from "./types/Target";
 import { Editor } from "@tinymce/tinymce-webcomponent";
 import AnnotationServerStorage from "./storage";
 import "@ungap/custom-elements";
 
 import "./styles/index.scss";
+import { AnnotationLabel } from "./elements/AnnotationLabel";
 
 declare global {
     /**
@@ -26,6 +27,15 @@ declare global {
 // define a custom event to indicate that annotations should have positions recalculated
 const ReloadPositionsEvent = new Event("reload-all-positions");
 
+// Shim for Object.groupBy() until it's implemented in all browsers
+// via https://stackoverflow.com/a/62765924/394067
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, jsdoc/require-jsdoc
+const groupBy = <T, K extends keyof any>(arr: T[], key: (i: T) => K) =>
+    arr.reduce((groups, item) => {
+        (groups[key(item)] ||= []).push(item);
+        return groups;
+    }, {} as Record<K, T[]>);
+
 /**
  * Custom annotation editor for Geniza project
  */
@@ -33,7 +43,7 @@ class TranscriptionEditor {
     anno;
 
     annotationContainer: HTMLElement;
-    
+
     toolbarContainer: HTMLFieldSetElement;
 
     storage;
@@ -70,6 +80,8 @@ class TranscriptionEditor {
         this.storage = storage;
         // disable the default annotorious editor (headless mode)
         this.anno.disableEditor = true;
+        // read only in line mode
+        this.anno.readOnly = this.storage.settings.lineMode;
         this.annotationContainer = annotationContainer;
         this.currentAnnotationBlock = null;
 
@@ -91,6 +103,9 @@ class TranscriptionEditor {
             });
         if (!customElements.get("annotation-block"))
             customElements.define("annotation-block", AnnotationBlock);
+
+        if (!customElements.get("annotation-label"))
+            customElements.define("annotation-label", AnnotationLabel);
 
         // attach event listeners
         document.addEventListener(
@@ -124,11 +139,14 @@ class TranscriptionEditor {
             Editor();
         }
         if (!window.tinyConfig) {
+            // hide numbered list in line-level editor mode
+            const toolbar = this.storage.settings?.lineMode
+                ? "language | strikethrough superscript | undo redo | "
+                : "language | numlist | strikethrough superscript | undo redo | ";
             window.tinyConfig = {
-                height: 500,
+                height: this.storage?.settings?.lineMode ? 150 : 500,
                 plugins: "lists",
-                toolbar:
-                    "language | numlist | strikethrough superscript | undo redo | ",
+                toolbar,
                 directionality: textDirection || "rtl",
                 formats: {
                     strikethrough: { inline: "del" },
@@ -207,46 +225,103 @@ class TranscriptionEditor {
     }
 
     /**
+     * Helper method to sort annotations by position and create and append
+     * AnnotationBlocks for each.
+     *
+     * @param {Array<Annotation>} annotations A list of annotations
+     * @param {HTMLElement} container A container in which to place the blocks
+     */
+    createBlocks(annotations: Array<Annotation>, container: HTMLElement) {
+        // sort by position attribute if present
+        annotations.sort((a: Annotation, b: Annotation) => {
+            // null position should go to the end; it means dragged from another canvas
+            if (a["schema:position"] === null) return 1;
+            if (b["schema:position"] === null) return -1;
+            if (a["schema:position"] && b["schema:position"])
+                return a["schema:position"] - b["schema:position"];
+            return 0;
+        });
+        // append annotation blocks to display current annotations
+        annotations.forEach((annotation: Annotation) => {
+            container.append(
+                new AnnotationBlock({
+                    annotation,
+                    editable: false,
+                    onCancel: this.handleCancel.bind(this),
+                    onClick: this.handleClickAnnotationBlock.bind(this),
+                    onDelete: this.handleDeleteAnnotation.bind(this),
+                    onDrag: this.handleDrag.bind(this),
+                    onReorder: this.handleDropAnnotationBlock.bind(this),
+                    onSave: this.handleSaveAnnotation.bind(this),
+                    updateAnnotorious: this.anno.addAnnotation,
+                }),
+            );
+        });
+    }
+
+    /**
      * Handler for custom annotations loaded event triggered by storage plugin.
      *
      * @param {Event} e The annotations-loaded custom event
      */
     async handleAnnotationsLoaded(e: Event) {
         // only reload if the event target (i.e. canvas) matches this one
-        if (e instanceof CustomEvent && e.detail?.target === this.storage?.settings?.target) {
+        if (
+            e instanceof CustomEvent &&
+            e.detail?.target === this.storage?.settings?.target
+        ) {
             // remove any existing annotation blocks and drop zones, in case of update
             this.annotationContainer
-                .querySelectorAll("[class^='tahqiq-block']")
+                .querySelectorAll(
+                    "[class^='tahqiq-block'], .tahqiq-drop-zone, .tahqiq-line-group",
+                )
                 .forEach((el) => el.remove());
-            this.annotationContainer.querySelector(".tahqiq-drop-zone")?.remove();
             // display all current annotations
             const currentAnnotations = e.detail.annotations;
             if (currentAnnotations) {
-                // sort by position attribute if present
-                currentAnnotations.sort((a: Annotation, b: Annotation) => {
-                    // null position should go to the end; it means dragged from another canvas
-                    if (a["schema:position"] === null) return 1;
-                    if (b["schema:position"] === null) return -1;
-                    if (a["schema:position"] && b["schema:position"])
-                        return a["schema:position"] - b["schema:position"];
-                    return 0;
-                });
-                // append annotation blocks to display current annotations
-                currentAnnotations.forEach((annotation: Annotation) => {
-                    this.annotationContainer.append(
-                        new AnnotationBlock({
-                            annotation,
-                            editable: false,
-                            onCancel: this.handleCancel.bind(this),
-                            onClick: this.handleClickAnnotationBlock.bind(this),
-                            onDelete: this.handleDeleteAnnotation.bind(this),
-                            onDrag: this.handleDrag.bind(this),
-                            onReorder: this.handleDropAnnotationBlock.bind(this),
-                            onSave: this.handleSaveAnnotation.bind(this),
-                            updateAnnotorious: this.anno.addAnnotation,
-                        }),
+                if (this.storage.settings.lineMode) {
+                    // line mode: group line-level annotations by associated block-level ID
+                    Object.entries(
+                        groupBy(
+                            currentAnnotations.filter(
+                                (anno: Annotation) =>
+                                    anno.textGranularity === TextGranularity.LINE,
+                            ),
+                            (anno: Annotation) => anno.partOf || "group",
+                        ),
+                    ).forEach(([blockId, lines]) => {
+                        // locate the associated block-level annotation by ID
+                        const group = currentAnnotations.find(
+                            (anno: Annotation) =>
+                                anno.textGranularity === TextGranularity.BLOCK &&
+                                anno.id === blockId,
+                        );
+                        // create the line group element and append the group label
+                        const lineGroup = document.createElement("DIV");
+                        lineGroup.classList.add("tahqiq-line-group");
+                        // allow editing the label associated with the group of line-level
+                        // annotations, since the group itself is not editable, only the lines
+                        this.annotationContainer.append(
+                            new AnnotationLabel({
+                                annotation: group,
+                                editable: false,
+                                onCancel: this.handleCancel.bind(this),
+                                onClick:
+                                    this.handleClickAnnotationBlock.bind(this),
+                                onSave: this.handleSaveAnnotation.bind(this),
+                            }),
+                            lineGroup,
+                        );
+                        // create the editable line-level content blocks
+                        this.createBlocks(lines, lineGroup);
+                    });
+                } else {
+                    // block mode: just create blocks from all annotations
+                    this.createBlocks(
+                        currentAnnotations,
+                        this.annotationContainer,
                     );
-                });
+                }
             }
             // if no annotations returned, append a drop zone here so we can drop annotations
             // from other canvases onto this one
@@ -306,8 +381,10 @@ class TranscriptionEditor {
      * When cancel button is clicked, cancel with annotorious and set all draggable
      */
     handleCancel() {
-        // cancel with annotorious
-        this.anno.cancelSelected();
+        if (this.anno.getSelected()) {
+            // cancel with annotorious
+            this.anno.cancelSelected();
+        }
         // make all annotations draggable
         this.setAllInteractive(true);
         // raise global cancellation event
@@ -385,20 +462,28 @@ class TranscriptionEditor {
                     "error",
                 );
             } else {
+                // calling removeAnnotation doesn't fire the deleteAnnotation event,
+                // so we have to trigger the deletion explicitly (also avoids race condition!)
+                await this.storage.delete(annotationBlock.annotation);
                 // remove the highlight zone from the image
                 this.anno.removeAnnotation(annotationBlock.annotation.id);
                 // decrement annotation count
                 this.storage.setAnnotationCount(this.storage.annotationCount - 1);
                 // remove the edit/display displayBlock
                 annotationBlock.remove();
-                // calling removeAnnotation doesn't fire the deleteAnnotation event,
-                // so we have to trigger the deletion explicitly (also avoids race condition!)
-                await this.storage.delete(annotationBlock.annotation);
                 // reload positions of all annotation blocks except this one
                 const blocks = this.annotationContainer.querySelectorAll(".tahqiq-block-display");
                 const annotations = Array.from(blocks).map((block) => {
-                    if (block instanceof AnnotationBlock 
-                    && block.annotation.id !== annotationBlock.annotation.id)
+                    if (
+                        block instanceof AnnotationBlock &&
+                        block.annotation.id !== annotationBlock.annotation.id &&
+                        // if annotation is line-level and has an associated block, reload only
+                        // the annotations in its block for performance
+                        (
+                            !block.annotation.partOf ||
+                            block.annotation.partOf === annotationBlock.annotation.partOf
+                        )
+                    )
                         return block.annotation;
                 });
                 await this.updateSequence(annotations);
@@ -415,19 +500,22 @@ class TranscriptionEditor {
      * Saves the passed annotation block's associated annotation using its editor
      * content (and label if present), and makes the annotation block read only.
      *
-     * @param {HTMLElement} annotationBlock Annotation block associated with the annotation to save.
+     * @param {AnnotationBlock | AnnotationLabel} annotationElement Annotation element
+     * associated with the annotation to save.
      */
-    async handleSaveAnnotation(annotationBlock: AnnotationBlock) {
+    async handleSaveAnnotation(
+        annotationElement: AnnotationBlock | AnnotationLabel,
+    ) {
         this.storage.alert("Saving...");
-        const annotation = annotationBlock.annotation;
-        const editorContent = window.tinymce.get(annotationBlock.editorId).getContent();
+        const annotation = annotationElement.annotation;
+        const editorContent = window.tinymce?.get(annotationElement.editorId)?.getContent();
         // add the content to the annotation
         if (Array.isArray(annotation.body) && annotation.body.length == 0) {
             annotation.body.push({
                 type: "TextualBody",
                 value: editorContent || "",
                 format: "text/html",
-                label: annotationBlock.labelElement.textContent || undefined,
+                label: annotationElement.labelElement.textContent || undefined,
                 // purpose: "transcribing",
                 // - purpose on body is only needed if more than one body
                 //   (e.g., transcription + tags in the same annotation)
@@ -435,28 +523,34 @@ class TranscriptionEditor {
         } else if (Array.isArray(annotation.body)) {
             // assume text content is first body element
             annotation.body[0].value = editorContent || "";
-            if (annotationBlock.labelElement.textContent) {
-                annotation.body[0].label = annotationBlock.labelElement.textContent;
-            }
+            annotation.body[0].label = annotationElement.labelElement.textContent || undefined;
         }
         // turn off draggability for all blocks while saving
         this.setAllInteractive(false);
-        // update with annotorious, save to, and reload from storage backend
-        await this.anno.updateSelected(annotation, true);
+        if (annotationElement instanceof AnnotationBlock) {
+            // update with annotorious, save to, and reload from storage backend
+            await this.anno.updateSelected(annotation, true);
+        } else {
+            await this.storage.handleUpdateAnnotationInStore(annotation);
+        }
     }
 
     /**
      * On clicking an AnnotationBlock, selects the associated annotation in Annotorious
      * and makes all other AnnotationBlocks read-only.
      *
-     * @param {Annotation} annotationBlock The AnnotationBlock that was clicked.
+     * @param {AnnotationBlock | AnnotationLabel} annotationElement The element that was clicked.
      */
-    handleClickAnnotationBlock(annotationBlock: AnnotationBlock) {
-        if (annotationBlock.annotation.id) {
-            // highlight the zone
-            this.anno.selectAnnotation(annotationBlock.annotation.id);
+    handleClickAnnotationBlock(
+        annotationElement: AnnotationBlock | AnnotationLabel,
+    ) {
+        if (annotationElement.annotation.id) {
+            if (annotationElement instanceof AnnotationBlock) {
+                // highlight the zone (block only)
+                this.anno.selectAnnotation(annotationElement.annotation.id);
+            }
             // make sure no other annotation blocks are editable
-            this.makeAllReadOnlyExcept(annotationBlock);
+            this.makeAllReadOnlyExcept(annotationElement);
             // ensure no annotation block is draggable
             this.setAllInteractive(false);
         }
@@ -485,7 +579,7 @@ class TranscriptionEditor {
      *
      * TODO: Test once DragEvent is implemented in jsdom
      * https://github.com/jsdom/jsdom/blob/28ed5/test/web-platform-tests/to-run.yaml#L648-L654
-     * 
+     *
      * @param {DragEvent} evt The "drop" event that triggered this handler
      */
     async handleDropAnnotationBlock(evt: DragEvent) {
@@ -609,15 +703,18 @@ class TranscriptionEditor {
     /**
      * Sets all annotation blocks to read-only, except the passed one.
      *
-     * @param {AnnotationBlock} annotationBlock The annotation block not to make read-only.
+     * @param {AnnotationBlock | AnnotationLabel} annotationElement The annotation block not
+     * to make read-only.
      */
-    makeAllReadOnlyExcept(annotationBlock: AnnotationBlock) {
+    makeAllReadOnlyExcept(
+        annotationElement: AnnotationBlock | AnnotationLabel,
+    ) {
         this.annotationContainer
-            .querySelectorAll(".tahqiq-block-editor")
+            .querySelectorAll(".tahqiq-block-editor, .tahqiq-label-editor")
             .forEach((block) => {
                 if (
-                    block instanceof AnnotationBlock &&
-                    block !== annotationBlock
+                    (block instanceof AnnotationBlock || block instanceof AnnotationLabel) &&
+                    block !== annotationElement
                 ) {
                     block.makeReadOnly();
                 }
@@ -628,7 +725,7 @@ class TranscriptionEditor {
      * Enable or disable all pointer events on the annotorious canvas in the current instance.
      * If an annotorious rectangle is currently selected and editable, it will remain movable
      * and resizable (pointer-events: all), even if enabled is set false.
-     * 
+     *
      * @param {boolean} enabled Whether or not pointer events should be enabled
      */
     setAnnotoriousPointerEvents(enabled: boolean) {
@@ -689,15 +786,19 @@ class TranscriptionEditor {
     /**
      * Set draggability on or off for all blocks; set pointer-events enabled or disabled on
      * the Annotorious canvas.
-     * 
+     *
      * @param {boolean} interactive Whether or not blocks should be draggable and clickable
      */
     setAllInteractive(interactive: boolean) {
         this.annotationContainer
-            .querySelectorAll("annotation-block")
+            .querySelectorAll("annotation-block, annotation-label")
             .forEach((block) => {
                 if (block instanceof AnnotationBlock) {
-                    block.setDraggable(interactive);
+                    // no dragging in line mode
+                    block.setDraggable(interactive && !this.storage?.settings?.lineMode);
+                    block.setClickable(interactive);
+                } else if (block instanceof AnnotationLabel) {
+                    // no dragging annotationlabel (only shows up in line mode)
                     block.setClickable(interactive);
                 }
             });

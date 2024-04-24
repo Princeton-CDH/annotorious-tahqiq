@@ -1,4 +1,4 @@
-import type { Annotation, SavedAnnotation } from "./types/Annotation";
+import { TextGranularity, type Annotation, type SavedAnnotation } from "./types/Annotation";
 import type { Source } from "./types/Source";
 import type { Settings } from "./types/Settings";
 
@@ -55,7 +55,15 @@ class AnnotationServerStorage {
             const annotations: void | SavedAnnotation[] = await this.search(
                 this.settings.target,
             );
-            await this.anno.setAnnotations(annotations);
+            if (this.settings.lineMode) {
+                // in line-by-line editing mode, only render line-level annotations in annotorious
+                await this.anno.setAnnotations(
+                    annotations?.filter((a) => a.textGranularity === TextGranularity.LINE),
+                );
+            } else {
+                // otherwise render block-level annotations
+                await this.anno.setAnnotations(annotations);
+            }
             if (annotations instanceof Array) {
                 this.annotationCount = annotations.length;
             }
@@ -155,6 +163,30 @@ class AnnotationServerStorage {
             return await Promise.resolve(updatedAnnotation);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
+            // in case of an error, ensure annotation gets re-selected while editor still open
+            this.anno.selectAnnotation(annotation);
+            this.alert(err.message, "error");
+        }
+    }
+
+    /**
+     * Update the annotation in the store only (i.e. when image annotation editing is disabled).
+     *
+     * @param {SavedAnnotation} annotation Updated annotation.
+     */
+    async handleUpdateAnnotationInStore(
+        annotation: SavedAnnotation,
+    ): Promise<Annotation | void> {
+        try {
+            const updatedAnnotation: SavedAnnotation = await this.update(
+                annotation,
+            );
+            // reload annotations from storage (for post-save effects e.g. html sanitization)
+            await this.loadAnnotations();
+            this.alert("Annotation saved", "success");
+            return await Promise.resolve(updatedAnnotation);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
             this.alert(err.message, "error");
         }
     }
@@ -168,13 +200,15 @@ class AnnotationServerStorage {
      */
     async handleDeleteAnnotation(annotation: SavedAnnotation): Promise<void> {
         try {
-            this.setAnnotationCount(this.annotationCount - 1);
             await this.delete(annotation);
+            this.setAnnotationCount(this.annotationCount - 1);
             await this.loadAnnotations();
             this.alert("Annotation deleted", "success");
             return await Promise.resolve();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
+            // in case of an error, ensure annotation gets re-selected while editor still open
+            this.anno.selectAnnotation(annotation);
             this.alert(err.message, "error");
         }
     }
@@ -226,11 +260,18 @@ class AnnotationServerStorage {
                 Accept: "application/json",
                 "Content-Type": "application/json",
                 "X-CSRFToken": this.settings.csrf_token,
+                // ensure match with the previously fetched ETag
+                "If-Match": annotation.etag,
             },
             method: "POST",
         });
         if (res.ok) {
             return res.json();
+        } else if (res.status === 412) {
+            throw new Error(
+                `Error: Annotation was modified by another user while you were working.
+                Refresh the page to get the latest version, then make your changes.`,
+            );
         } else {
             throw new Error(
                 `Error updating annotation: ${res.status} ${res.statusText}`,
@@ -250,11 +291,18 @@ class AnnotationServerStorage {
                 Accept: "application/json",
                 "Content-Type": "application/json",
                 "X-CSRFToken": this.settings.csrf_token,
+                // ensure match with the previously fetched ETag
+                "If-Match": annotation.etag,
             },
             method: "DELETE",
         });
         if (res.ok) {
             return res;
+        } else if (res.status === 412) {
+            throw new Error(
+                `Error: Annotation was modified by another user.
+                Refresh the page to get the latest version, then delete it.`,
+            );
         } else {
             throw new Error(
                 `Error deleting annotation: ${res.status} ${res.statusText}`,

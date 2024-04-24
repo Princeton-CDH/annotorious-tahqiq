@@ -1,23 +1,22 @@
 import { AnnotationBlock } from "./AnnotationBlock";
+import { AnnotationLabel } from "./AnnotationLabel";
 import "@ungap/custom-elements";
 
 /**
  * A button to save a selected annotation to the store.
  */
 class SaveButton extends HTMLButtonElement {
-    annotationBlock: AnnotationBlock;
+    annotationElement: AnnotationBlock | AnnotationLabel;
 
     /**
      * Creates a new save button.
      *
-     * @param {HTMLElement} annotationBlock Annotation block associated with this save button.
+     * @param {HTMLElement} annotationElement Annotation element associated with this save button.
      */
-    constructor(
-        annotationBlock: AnnotationBlock,
-    ) {
+    constructor(annotationElement: AnnotationBlock | AnnotationLabel) {
         super();
 
-        this.annotationBlock = annotationBlock;
+        this.annotationElement = annotationElement;
 
         // Set class and content
         this.classList.add("tahqiq-button", "tahqiq-save-button");
@@ -34,7 +33,10 @@ class SaveButton extends HTMLButtonElement {
      */
     async handleClick(evt: Event): Promise<void> {
         evt.stopPropagation(); // ensure parent onClick event isn't called
-        await this.annotationBlock.onSave(this.annotationBlock);
+        if (this.annotationElement instanceof AnnotationBlock)
+            await this.annotationElement.onSave(this.annotationElement);
+        else if (this.annotationElement instanceof AnnotationLabel)
+            await this.annotationElement.onSave(this.annotationElement);
     }
 }
 

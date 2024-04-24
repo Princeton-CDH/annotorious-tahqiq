@@ -8,6 +8,7 @@ interface Settings {
     csrf_token: string;
     secondaryMotivation?: string;
     sourceUri?: string;
+    lineMode?: boolean;
 }
 
 export { Settings };
