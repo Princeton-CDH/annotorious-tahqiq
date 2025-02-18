@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.5.0
+
+### Breaking changes
+
+- Reorder the editor initialization parameters to place the TinyMCE API key before the other optional parameters
+
+### Features
+
+- Add `italicEnabled` argument to the editor initialization parameters to allow users to opt in to that formatting option
+
 ## 1.4.0
 
 ### Features

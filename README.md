@@ -79,6 +79,7 @@ new TranscriptionEditor(
     tinyApiKey,
     textDirection, // one of the two strings "rtl" or "ltr"; sets text direction
                    // of the TinyMCE editor 
+    italicEnabled, // set true to include italic formatting option
 );
 ```
 

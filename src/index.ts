@@ -63,8 +63,9 @@ class TranscriptionEditor {
      * placed into.
      * @param {HTMLFieldSetElement} toolbarContainer Existing HTML element that the toolbar inputs
      * will be placed into.
-     * @param {string} textDirection Text direction of the TinyMCE rich text editor.
      * @param {string} tinyApiKey API key for the TinyMCE rich text editor.
+     * @param {string} textDirection Text direction of the TinyMCE rich text editor.
+     * @param {boolean} italicEnabled Set true to enable italic formatting.
      */
     constructor(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,8 +74,9 @@ class TranscriptionEditor {
         storage: any,
         annotationContainer: HTMLElement,
         toolbarContainer: HTMLFieldSetElement,
-        textDirection?: string,
         tinyApiKey?: string,
+        textDirection?: string,
+        italicEnabled?: boolean,
     ) {
         this.anno = anno;
         this.storage = storage;
@@ -139,10 +141,12 @@ class TranscriptionEditor {
             Editor();
         }
         if (!window.tinyConfig) {
+            const numlist = this.storage.settings?.lineMode ? "" : " numlist |";
+            const italic = italicEnabled ? " italic" : "";
             // hide numbered list in line-level editor mode
-            const toolbar = this.storage.settings?.lineMode
-                ? "language | strikethrough superscript | undo redo | "
-                : "language | numlist | italic strikethrough superscript | undo redo | ";
+            const toolbar = `language |${
+                numlist
+            }${italic} strikethrough superscript | undo redo | `;
             window.tinyConfig = {
                 height: this.storage?.settings?.lineMode ? 150 : 500,
                 plugins: "lists",
