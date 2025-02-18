@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.5.1
+
+### Bug fixes
+
+- Use `i` element instead of `em` for semantic accuracy and to prevent conflicts with other uses of `em`
+
 ## 1.5.0
 
 ### Breaking changes
