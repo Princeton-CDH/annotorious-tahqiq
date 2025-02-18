@@ -63,8 +63,8 @@ class TranscriptionEditor {
      * placed into.
      * @param {HTMLFieldSetElement} toolbarContainer Existing HTML element that the toolbar inputs
      * will be placed into.
-     * @param {string} textDirection Text direction of the TinyMCE rich text editor.
      * @param {string} tinyApiKey API key for the TinyMCE rich text editor.
+     * @param {string} textDirection Text direction of the TinyMCE rich text editor.
      * @param {boolean} italicEnabled Set true to enable italic formatting.
      */
     constructor(
@@ -74,8 +74,8 @@ class TranscriptionEditor {
         storage: any,
         annotationContainer: HTMLElement,
         toolbarContainer: HTMLFieldSetElement,
-        textDirection?: string,
         tinyApiKey?: string,
+        textDirection?: string,
         italicEnabled?: boolean,
     ) {
         this.anno = anno;
