@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.4.0
+
+### Features
+
+- Add italic (using the `em` element) to list of formatting options
+
 ## 1.3.0
 
 ### Features
