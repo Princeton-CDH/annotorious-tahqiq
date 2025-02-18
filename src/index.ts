@@ -153,11 +153,12 @@ class TranscriptionEditor {
                 toolbar,
                 directionality: textDirection || "rtl",
                 formats: {
-                    italic: { inline: "em" },
+                    italic: { inline: "i" },
                     strikethrough: { inline: "del" },
                     // A custom format for insertion element
                     ins: { inline: "ins" },
                 },
+                extended_valid_elements: "i,em",
                 content_langs: [
                     { title: "English", code: "en" },
                     { title: "Hebrew", code: "he" },
