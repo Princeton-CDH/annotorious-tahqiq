@@ -142,13 +142,14 @@ class TranscriptionEditor {
             // hide numbered list in line-level editor mode
             const toolbar = this.storage.settings?.lineMode
                 ? "language | strikethrough superscript | undo redo | "
-                : "language | numlist | strikethrough superscript | undo redo | ";
+                : "language | numlist | italic strikethrough superscript | undo redo | ";
             window.tinyConfig = {
                 height: this.storage?.settings?.lineMode ? 150 : 500,
                 plugins: "lists",
                 toolbar,
                 directionality: textDirection || "rtl",
                 formats: {
+                    italic: { inline: "em" },
                     strikethrough: { inline: "del" },
                     // A custom format for insertion element
                     ins: { inline: "ins" },
