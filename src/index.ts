@@ -146,10 +146,10 @@ class TranscriptionEditor {
             // hide numbered list in line-level editor mode
             const toolbar = `language |${
                 numlist
-            }${italic} strikethrough superscript | undo redo | `;
+            }${italic} strikethrough superscript | ltr rtl | undo redo | `;
             window.tinyConfig = {
                 height: this.storage?.settings?.lineMode ? 150 : 500,
-                plugins: "lists",
+                plugins: "lists directionality",
                 toolbar,
                 directionality: textDirection || "rtl",
                 formats: {
@@ -158,15 +158,15 @@ class TranscriptionEditor {
                     // A custom format for insertion element
                     ins: { inline: "ins" },
                 },
-                extended_valid_elements: "i,em",
+                extended_valid_elements: "i,em,p[dir],ol[dir],li[dir]",
                 content_langs: [
                     { title: "English", code: "en" },
                     { title: "Hebrew", code: "he" },
                     { title: "Arabic", code: "ar" },
                 ],
                 content_style:
-                    "::marker { margin-left: 1em; }\
-                li { padding-right: 1em; } ins { color: gray; }",
+                    "::marker { margin-inline-end: 1em; }\
+                li { padding-inline-start: 1em; } ins { color: gray; }",
                 menubar: false, // disable menu bar
             };
         }
