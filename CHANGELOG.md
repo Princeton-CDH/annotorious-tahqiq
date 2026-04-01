@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.6.0
+
+### Features
+
+- Add `directionality` plugin and LTR/RTL buttons
+
 ## 1.5.1
 
 ### Bug fixes
