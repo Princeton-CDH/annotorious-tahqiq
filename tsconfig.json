@@ -2,7 +2,8 @@
     "extends": "@tsconfig/node16/tsconfig.json",
     "compilerOptions": {
         "lib": ["es2021", "dom"],
-        "sourceMap": true
+        "sourceMap": true,
+        "types": ["jest", "node"]
     },
     "include": ["src/**/*", "tests/**/*"],
     "exclude": ["node_modules", "**/*.spec.ts", "dist/index.js"]
