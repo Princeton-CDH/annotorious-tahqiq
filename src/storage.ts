@@ -3,7 +3,6 @@ import type { Source } from "./types/Source";
 import type { Settings } from "./types/Settings";
 
 // TODO: Add a typedef for the Annotorious client (anno)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 /**
  * Annotorious plugin to use W3C protocol storage
  */
@@ -49,6 +48,9 @@ class AnnotationServerStorage {
     /**
      * Helper function to load annotations asynchronously once the plugin
      * is initialized.
+     *
+     * @returns {Promise<void | SavedAnnotation[]>} The loaded annotations, or nothing
+     * if loading failed.
      */
     async loadAnnotations() {
         try {
@@ -90,6 +92,7 @@ class AnnotationServerStorage {
      * the stored annotation retrieved from storage in a Promise.
      *
      * @param {Annotation} annotation V3 (W3C) annotation
+     * @returns {Promise<Annotation | void>} The saved annotation, or nothing if saving failed.
      */
     async handleCreateAnnotation(
         annotation: Annotation,
@@ -138,6 +141,7 @@ class AnnotationServerStorage {
      *
      * @param {SavedAnnotation} annotation Updated annotation.
      * @param {SavedAnnotation} previous Previously saved annotation.
+     * @returns {Promise<Annotation | void>} The updated annotation, or nothing if saving failed.
      */
     async handleUpdateAnnotation(
         annotation: SavedAnnotation,
@@ -173,6 +177,7 @@ class AnnotationServerStorage {
      * Update the annotation in the store only (i.e. when image annotation editing is disabled).
      *
      * @param {SavedAnnotation} annotation Updated annotation.
+     * @returns {Promise<Annotation | void>} The updated annotation, or nothing if saving failed.
      */
     async handleUpdateAnnotationInStore(
         annotation: SavedAnnotation,
@@ -197,6 +202,7 @@ class AnnotationServerStorage {
      *
      * @param {SavedAnnotation} annotation Annotation to delete; must have an
      * id property that matches its id property in the store.
+     * @returns {Promise<void>} Resolves once the annotation is deleted and annotations reloaded.
      */
     async handleDeleteAnnotation(annotation: SavedAnnotation): Promise<void> {
         try {
@@ -226,6 +232,7 @@ class AnnotationServerStorage {
      * Save a new annotation to storage.
      *
      * @param {Annotation} annotation V3 (W3C) annotation to save.
+     * @returns {Promise<SavedAnnotation>} The annotation as saved in storage.
      */
     async create(annotation: Annotation): Promise<SavedAnnotation> {
         const res = await fetch(`${this.settings.annotationEndpoint}`, {
@@ -251,6 +258,7 @@ class AnnotationServerStorage {
      * Update an existing annotation in storage.
      *
      * @param {SavedAnnotation} annotation V3 (W3C) annotation to update.
+     * @returns {Promise<SavedAnnotation>} The annotation as updated in storage.
      */
     async update(annotation: SavedAnnotation): Promise<SavedAnnotation> {
         // post the revised annotation to its URI
@@ -284,6 +292,7 @@ class AnnotationServerStorage {
      * Delete an existing annotation from storage.
      *
      * @param {SavedAnnotation} annotation to delete
+     * @returns {Promise<Response>} The server's response to the delete request.
      */
     async delete(annotation: SavedAnnotation) {
         const res = await fetch(annotation.id, {
@@ -315,6 +324,7 @@ class AnnotationServerStorage {
      * Search for annotations on the specified target, ordered by schema:position attribute.
      *
      * @param {string} targetUri URI of the target to search for
+     * @returns {Promise<void | SavedAnnotation[]>} Annotations on the target.
      */
     async search(targetUri: string): Promise<void | SavedAnnotation[]> {
         const { annotationEndpoint, sourceUri, manifest, secondaryMotivation } =
