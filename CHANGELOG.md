@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.7.0
+
+### Features
+
+- Ask the user to confirm before deleting an annotation with the Delete button
+
 ## 1.6.0
 
 ### Features

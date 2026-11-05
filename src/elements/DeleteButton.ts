@@ -26,12 +26,19 @@ class DeleteButton extends HTMLButtonElement {
     }
 
     /**
-     * Delete the annotation on click.
+     * Delete the annotation on click, after the user confirms.
      *
      * @param {Event} evt Click event
      */
     handleClick(evt: Event) {
         evt.stopPropagation(); // ensure parent onClick event isn't called
+        if (
+            !confirm(
+                "Are you sure you want to delete this annotation? This cannot be undone.",
+            )
+        ) {
+            return;
+        }
         this.annotationBlock.onDelete(this.annotationBlock);
     }
 }
