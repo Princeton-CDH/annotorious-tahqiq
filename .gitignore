@@ -56,3 +56,6 @@ typings/
 
 # built code
 dist/
+
+# vscode
+.vscode/
