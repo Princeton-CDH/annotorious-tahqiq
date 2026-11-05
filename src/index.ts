@@ -682,6 +682,7 @@ class TranscriptionEditor {
      * save if changed. Used for annotation reordering and deletion.
      *
      * @param {(Annotation | undefined)[]} annotations Array of annotations.
+     * @returns {Promise<void | Annotation[]>} The reloaded annotations.
      */
     async updateSequence(annotations: (Annotation | undefined)[]) {
         // turn off draggability for all blocks while loading

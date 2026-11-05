@@ -36,6 +36,8 @@ describe("Element initialization", () => {
 describe("Click handler", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        // mock global confirm method; default to user confirming
+        global.confirm = jest.fn().mockReturnValue(true);
     });
     it("Should stop event propagation up to parent element", () => {
         const deleteButton = new DeleteButton(annoBlock);
@@ -44,10 +46,28 @@ describe("Click handler", () => {
         deleteButton.dispatchEvent(evt);
         expect(propagationSpy).toBeCalledTimes(1);
     });
-    it("Should call onDelete", () => {
+    it("Should prompt user to confirm deletion", () => {
+        const deleteButton = new DeleteButton(annoBlock);
+        deleteButton.dispatchEvent(new MouseEvent("click"));
+        expect(global.confirm).toHaveBeenCalledTimes(1);
+        expect(global.confirm).toHaveBeenCalledWith(
+            "Are you sure you want to delete this annotation? This cannot be undone.",
+        );
+    });
+    it("Should call onDelete when user confirms", () => {
         const deleteButton = new DeleteButton(annoBlock);
         const evt = new MouseEvent("click");
         deleteButton.dispatchEvent(evt);
         expect(annoBlock.onDelete).toBeCalledWith(annoBlock);
+    });
+    it("Should not call onDelete when user cancels", () => {
+        (global.confirm as jest.Mock).mockReturnValueOnce(false);
+        const deleteButton = new DeleteButton(annoBlock);
+        const evt = new MouseEvent("click");
+        const propagationSpy = jest.spyOn(evt, "stopPropagation");
+        deleteButton.dispatchEvent(evt);
+        expect(annoBlock.onDelete).not.toHaveBeenCalled();
+        // still shouldn't trigger the parent onClick handler
+        expect(propagationSpy).toBeCalledTimes(1);
     });
 });

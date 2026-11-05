@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.7.0
+
+### Features
+
+- Ask the user to confirm before deleting an annotation with the Delete button
+
+### Maintenance
+
+- Dev tooling upgrades: TypeScript 6, Jest 29, ESLint 10, Node 26
+
 ## 1.6.0
 
 ### Features
